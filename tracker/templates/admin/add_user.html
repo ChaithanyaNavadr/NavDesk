@@ -1,45 +1,58 @@
 {% extends "admin/base.html" %}
+
 {% block content %}
-<h2>Add User</h2>
-<form method="POST">
-    {% csrf_token %}
-    
-    <label for="email">Email/User ID:</label>
-    <input type="email" name="email" required>
-
-    <label for="user_name">User Name:</label>
-    <input type="text" name="user_name" required>
-
-    <label for="password">Password:</label>
-    <input type="password" name="password" required>
-
-    <label for="confirm_password">Confirm Password:</label>
-    <input type="password" name="confirm_password" required>
-
-    <label for="role">Select Role:</label>
-    <select name="role" id="role" required>
-        {% for role in roles %}
-            <option value="{{ role.id }}">{{ role.name }}</option>
-        {% endfor %}
-    </select>
-
-    <div id="departmentField" style="display: none;">
-        <label for="department">Department:</label>
-        <input type="text" name="department">
-    </div>
-
-    <button type="submit">Create User</button>
-</form>
+<div class="container">
+    <h2>Add New User</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" class="form-control" id="email" name="email" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="user_name">Username</label>
+            <input type="text" class="form-control" id="user_name" name="user_name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="confirm_password">Confirm Password</label>
+            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="role">Role</label>
+            <select class="form-control" id="role" name="role" required onchange="toggleDepartment(this.value)">
+                <option value="">Select Role</option>
+                {% for role in roles %}
+                <option value="{{ role.id }}">{{ role.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group" id="department_group" style="display: none;">
+            <label for="department">Department</label>
+            <input type="text" class="form-control" id="department" name="department">
+        </div>
+        
+        <button type="submit" class="btn btn-primary mt-3">Add User</button>
+    </form>
+</div>
 
 <script>
-document.getElementById("role").addEventListener("change", function() {
-    var departmentField = document.getElementById("departmentField");
-    if (this.value == "{{ Role.EMPLOYEE }}") {
-        departmentField.style.display = "block";
+function toggleDepartment(roleId) {
+    const departmentGroup = document.getElementById('department_group');
+    // Show department field for Employee and Staff roles
+    if (roleId == '{{ Role.EMPLOYEE }}' || roleId == '{{ Role.STAFF }}') {
+        departmentGroup.style.display = 'block';
     } else {
-        departmentField.style.display = "none";
+        departmentGroup.style.display = 'none';
     }
-});
+}
 </script>
-
 {% endblock %}

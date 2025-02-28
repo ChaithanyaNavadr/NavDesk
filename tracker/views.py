@@ -39,6 +39,7 @@ from .models import (
     Priority
 )
 from .utils import generate_password_reset_token, verify_password_reset_token
+from .forms import StaffTicketForm  # Add this import
 
 User = get_user_model()
 
@@ -54,6 +55,8 @@ def role_based_dashboard(request):
         return redirect('manager_dashboard')
     elif request.user.is_client():
         return redirect('client_dashboard')
+    elif request.user.is_staff():  # Add staff check
+        return redirect('staff_dashboard')
     elif request.user.is_employee():
         return redirect('employee_dashboard')
     else:
@@ -61,28 +64,28 @@ def role_based_dashboard(request):
 
 @role_required([Role.ADMIN])  # Changed from @superuser_required
 def admin_dashboard(request):
-    if not request.user.is_authenticated or not (request.user.is_admin() or request.user.is_superuser):
-        messages.error(request, "You don't have permission to access this page.")
-        return redirect('login')
-        
+    """Admin dashboard view with statistics"""
+    context = {
+        'total_users': UserDetail.objects.count(),
+        'total_teams': Group.objects.count(),  # Count number of groups
+        'total_tickets': Ticket.objects.filter(status='ACTIVE').count(),
+        'total_priorities': Priority.objects.count(),  # Count number of priorities
+        'user_metrics': get_user_metrics(),
+        'ticket_metrics': get_ticket_metrics(),
+        'recent_tickets': get_recent_tickets()
+    }
+    return render(request, 'dashboards/admin_dashboard.html', context)
+
+@role_required([Role.ADMIN])
+def admin_dashboard(request):
     context = {
         'total_users': UserDetail.objects.count(),
         'total_tickets': Ticket.objects.count(),
-        'recent_tickets': Ticket.objects.order_by('-created_at')[:10],
-        # Fix the user metrics query
-        'user_metrics': UserDetail.objects.values(
-            'role__name'
-        ).annotate(
-            count=Count('row_id')  # Use row_id instead of id
-        ).filter(
-            role__isnull=False
-        ),
-        # Fix the ticket metrics query
-        'ticket_metrics': Ticket.objects.values(
-            'status'
-        ).annotate(
-            count=Count('id')
-        )
+        'total_teams': Group.objects.count(),
+        'total_priorities': Priority.objects.count(),
+        'user_metrics': get_user_metrics(),
+        'ticket_metrics': get_ticket_metrics(),
+        'recent_tickets': Ticket.objects.order_by('-created_at')[:5]
     }
     return render(request, 'dashboards/admin_dashboard.html', context)
 
@@ -138,6 +141,108 @@ def user_dashboard(request):
     }
     return render(request, 'dashboards/user_dashboard.html', context)
 
+@role_required([Role.STAFF])
+def staff_dashboard(request):
+    """Staff Dashboard View"""
+    context = {
+        'assigned_tickets': Ticket.objects.filter(assigned_to=request.user),
+        'created_tickets': Ticket.objects.filter(created_by=request.user),
+        'org_tickets': Ticket.objects.filter(
+            Q(created_by__department=request.user.department) |
+            Q(assigned_to__department=request.user.department)
+        ),
+        'recent_comments': TicketComment.objects.filter(
+            Q(ticket__assigned_to=request.user) |
+            Q(ticket__created_by=request.user)
+        ).order_by('-created_at')[:5]
+    }
+    return render(request, 'dashboards/staff_dashboard.html', context)
+
+@role_required([Role.STAFF])
+def staff_create_ticket(request):
+    if request.method == 'POST':
+        form = StaffTicketForm(request.POST)
+        if form.is_valid():
+            ticket = form.save(commit=False)
+            ticket.created_by = request.user
+            ticket.save()
+            messages.success(request, 'Ticket created successfully.')
+            return redirect('staff_view_ticket', ticket_id=ticket.id)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = StaffTicketForm(initial={
+            'assigned_to': request.user
+        })
+    
+    context = {
+        'form': form,
+        'title': 'Create New Ticket',
+        'priorities': Priority.objects.all()  # Pass all priorities to template
+    }
+    return render(request, 'staff/create_ticket.html', context)
+
+@permission_required(['tracker.view_ticket', 'tracker.view_org_tickets'])
+def staff_view_ticket(request, ticket_id):
+    """Staff can view tickets"""
+    ticket = get_object_or_404(
+        Ticket,
+        Q(created_by=request.user) |
+        Q(assigned_to=request.user) |
+        Q(created_by__department=request.user.department),
+        id=ticket_id
+    )
+    
+    context = {
+        'ticket': ticket,
+        'comments': ticket.comments.all().order_by('-created_at'),
+        'can_close': ticket.assigned_to == request.user,
+        'can_comment': ticket.assigned_to == request.user or ticket.created_by == request.user
+    }
+    return render(request, 'staff/view_ticket.html', context)
+
+@permission_required(['tracker.comment_ticket'])
+def staff_add_comment(request, ticket_id):
+    """Staff can comment on assigned or created tickets"""
+    ticket = get_object_or_404(
+        Ticket,
+        Q(assigned_to=request.user) | Q(created_by=request.user),
+        id=ticket_id
+    )
+    
+    if request.method == "POST":
+        comment = request.POST.get('comment')
+        if comment:
+            TicketComment.objects.create(
+                ticket=ticket,
+                user=request.user,
+                comment=comment
+            )
+            messages.success(request, "Comment added successfully")
+        else:
+            messages.error(request, "Comment cannot be empty")
+            
+    return redirect('staff_view_ticket', ticket_id=ticket_id)
+
+@permission_required(['tracker.close_ticket'])
+def staff_close_ticket(request, ticket_id):
+    """Staff can close assigned tickets"""
+    ticket = get_object_or_404(Ticket, assigned_to=request.user, id=ticket_id)
+    
+    if request.method == "POST":
+        resolution = request.POST.get('resolution')
+        if resolution:
+            ticket.status = 'CLOSED'
+            ticket.resolution = resolution
+            ticket.closed_at = timezone.now()
+            ticket.closed_by = request.user
+            ticket.save()
+            messages.success(request, f"Ticket #{ticket.id} closed successfully")
+        else:
+            messages.error(request, "Please provide resolution details")
+            
+    return redirect('staff_view_ticket', ticket_id=ticket_id)
+
 # Helper functions for metrics
 def calculate_team_performance(department):
     # Add implementation
@@ -176,7 +281,6 @@ def login_view(request):
             messages.error(request, "Invalid email or password.")
     
     return render(request, "registration/login.html")
-
 
 def logout_view(request):
     logout(request)
@@ -706,7 +810,7 @@ def dictfetchall(cursor):
 @login_required_with_message
 def mloyal_search_ticket(request):
     ticket_id = request.GET.get('ticket_id')
-    if ticket_id:
+    if (ticket_id):
         try:
             # Verify ticket exists and belongs to current user
             ticket = Ticket.objects.get(
@@ -899,12 +1003,6 @@ class TicketDataView(LoginRequiredMixin, View):
             results = cursor.fetchall()
         return JsonResponse(results, safe=False)
 
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from tracker.models import UserDetail, Role
-from django.contrib.auth.models import Group
-from django.contrib.auth.hashers import make_password
-from django.contrib.auth.decorators import login_required
 
 @permission_required(['tracker.can_add_users'])
 def add_user(request):
@@ -928,9 +1026,9 @@ def add_user(request):
         try:
             role = Role.objects.get(id=role_id)
 
-            # If role is Employee, ensure department is provided
-            if role.id == Role.EMPLOYEE and not department:
-                messages.error(request, "Department is required for employees.")
+            # If role is Employee or Staff, ensure department is provided
+            if role.id in [Role.EMPLOYEE, Role.STAFF] and not department:
+                messages.error(request, "Department is required for employees and staff users.")
                 return redirect("add_user")
 
             # Create user
@@ -939,39 +1037,79 @@ def add_user(request):
                 user_name=user_name,
                 password=make_password(password),
                 role=role,
-                department=department if role.id == Role.EMPLOYEE else None,
-                is_active=True
+                department=department if role.id in [Role.EMPLOYEE, Role.STAFF] else None,
+                is_active=True,
+                is_staff=True if role.id == Role.STAFF else False  # Set is_staff for staff users
             )
 
-            # Assign user to the correct group
+            # Assign user to the correct group and permissions
             group, _ = Group.objects.get_or_create(name=role.name)
             user.groups.add(group)
 
-            messages.success(request, f"Successfully created user: {user_name} with role {role.name}")
+            # Assign staff-specific permissions if role is Staff
+            if role.id == Role.STAFF:
+                staff_permissions = [
+                    'create_ticket',
+                    'view_ticket',
+                    'comment_ticket',
+                    'close_ticket',
+                    'view_org_tickets'
+                ]
+                for perm_codename in staff_permissions:
+                    try:
+                        perm = Permission.objects.get(codename=perm_codename)
+                        user.user_permissions.add(perm)
+                    except Permission.DoesNotExist:
+                        continue
 
-            # Redirect to respective dashboard based on role
-            return redirect(get_dashboard_url(role.id))
+            messages.success(request, f"Successfully created user: {user_name} with role {role.name}")
+            return redirect('user_list')
 
         except Role.DoesNotExist:
             messages.error(request, "Invalid role selected.")
             return redirect("add_user")
 
     roles = Role.objects.all()
-    return render(request, "admin/add_user.html", {"roles": roles})
+    return render(request, "admin/add_user.html", {
+        "roles": roles,
+        "staff_role_id": Role.STAFF  # Pass staff role ID to template
+    })
 
 @permission_required(['tracker.can_assign_permissions'])
-def assign_permissions(request, user_id):
-    """Admin assigns permissions to users"""
-    user = get_object_or_404(UserDetail, id=user_id)
-    permissions = permissions.objects.all()
-
-    if request.method == "POST":
-        selected_permissions = request.POST.getlist("permissions")
-        user.user_permissions.set(selected_permissions)
-        messages.success(request, f"Permissions updated for {user.user_name}")
-        return redirect("user_list")
-
-    return render(request, "admin/assign_permissions.html", {"user": user, "permissions": permissions})
+def assign_permissions(request, user_id=None):
+    """Assign permissions to users"""
+    if user_id is None:
+        # List all users if no specific user is selected
+        users = UserDetail.objects.all().order_by('user_name')
+        return render(request, 'admin/permission_list.html', {'users': users})
+    
+    user = get_object_or_404(UserDetail, row_id=user_id)
+    
+    if request.method == 'POST':
+        # Get selected permissions from the form
+        permission_ids = request.POST.getlist('permissions')
+        
+        # Clear existing permissions and assign new ones
+        user.user_permissions.clear()
+        if permission_ids:
+            permissions = Permission.objects.filter(id__in=permission_ids)
+            user.user_permissions.add(*permissions)
+        
+        messages.success(request, f'Permissions updated for {user.user_name}')
+        return redirect('permission_list')
+    
+    # Get all available permissions
+    content_types = ContentType.objects.filter(
+        app_label='tracker'
+    )
+    permissions = Permission.objects.filter(content_type__in=content_types)
+    
+    context = {
+        'user': user,
+        'permissions': permissions,
+        'current_permissions': user.user_permissions.all()
+    }
+    return render(request, 'admin/assign_permissions.html', context)
 
 @permission_required(['tracker.can_manage_groups'])
 def create_group(request):
@@ -1127,7 +1265,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import permission_required
 from django.contrib import messages
 from tracker.models import UserDetail, Ticket, Role
-
 @permission_required('tracker.view_admin_dashboard', raise_exception=True)  # 🔹 Fix app name
 def admin_dashboard(request):
     """Admin Dashboard"""
@@ -1273,3 +1410,256 @@ def assign_team_view(request, team_id):
     }
     
     return render(request, 'admin/assign_team_view.html', context)
+
+@permission_required(['tracker.can_assign_permissions'])
+def assign_permissions(request):
+    """List all users for permission assignment"""
+    users = UserDetail.objects.all().order_by('user_name')
+    return render(request, 'admin/permission_list.html', {'users': users})
+
+@permission_required(['tracker.can_assign_permissions'])
+def assign_user_permissions(request, user_id):
+    """Assign permissions to specific user"""
+    user = get_object_or_404(UserDetail, row_id=user_id)
+    permissions = Permission.objects.all().order_by('content_type', 'codename')
+    
+    if request.method == 'POST':
+        selected_permissions = request.POST.getlist('permissions')
+        user.user_permissions.clear()
+        user.user_permissions.add(*selected_permissions)
+        messages.success(request, f'Permissions updated for {user.user_name}')
+        return redirect('assign_permissions')
+    
+    return render(request, 'admin/assign_permissions.html', {
+        'user': user,
+        'permissions': permissions
+    })
+
+@permission_required(['tracker.can_assign_team_view'])
+def assign_team_view(request):
+    """List all teams for team view assignment"""
+    teams = Group.objects.all().order_by('name')
+    return render(request, 'admin/team_list.html', {'teams': teams})
+
+@permission_required(['tracker.can_assign_team_view'])
+def assign_team_view_permissions(request, team_id):
+    """Assign team view permissions"""
+    team = get_object_or_404(Group, id=team_id)
+    available_users = UserDetail.objects.exclude(groups=team)
+    
+    if request.method == 'POST':
+        user_ids = request.POST.getlist('users')
+        team.user_set.add(*user_ids)
+        messages.success(request, f'Team view permissions assigned for {team.name}')
+        return redirect('assign_team_view')
+    
+    return render(request, 'admin/assign_team_view.html', {
+        'team': team,
+        'available_users': available_users,
+        'team_users': team.user_set.all()
+    })
+
+@permission_required(['tracker.can_assign_team_view'])
+def team_view_list(request):
+    """List all teams for team view assignment"""
+    teams = Group.objects.all().order_by('name')
+    return render(request, 'admin/team_list.html', {'teams': teams})
+
+@permission_required(['tracker.can_assign_team_view'])
+def assign_team_view(request, team_id=None):
+    """Assign team view permissions to users"""
+    if team_id is None:
+        # Show list of teams if no team_id is provided
+        teams = Group.objects.all().order_by('name')
+        return render(request, 'admin/team_list.html', {'teams': teams})
+    
+    # Get specific team and handle permissions
+    team = get_object_or_404(Group, id=team_id)
+    available_users = UserDetail.objects.exclude(groups=team)
+    
+    if request.method == 'POST':
+        user_ids = request.POST.getlist('users')
+        selected_users = UserDetail.objects.filter(row_id__in=user_ids)
+        
+        # Get the team view permission
+        content_type = ContentType.objects.get_for_model(Ticket)
+        view_permission = Permission.objects.get(
+            codename='view_team_tickets',
+            content_type=content_type,
+        )
+        
+        # Assign permissions to selected users
+        for user in selected_users:
+            user.user_permissions.add(view_permission)
+            team.user_set.add(user)
+        
+        messages.success(request, f'Users added to team {team.name} successfully')
+        return redirect('team_list')
+    
+    context = {
+        'team': team,
+        'available_users': available_users,
+        'team_users': team.user_set.all()
+    }
+    return render(request, 'admin/assign_team_view.html', context)
+
+
+def team_list(request):
+    """List all teams for team view assignment"""
+    teams = Group.objects.all().order_by('name')
+    return render(request, 'admin/team_list.html', {'teams': teams})
+
+def permission_list(request):
+    """List all permissions for permission assignment"""
+    permissions = Permission.objects.all().order_by('content_type', 'codename')
+    return render(request, 'admin/permissions_list.html', {'permissions': permissions})
+
+@permission_required(['tracker.can_assign_team_view'])
+def team_view_list(request):
+    """List all teams for team view assignment"""
+    teams = Group.objects.all().order_by('name')
+    return render(request, 'admin/team_list.html', {'teams': teams})
+
+@permission_required(['tracker.can_assign_team_view'])
+def manage_team_view(request, team_id):
+    """Manage team view permissions"""
+    team = get_object_or_404(Group, id=team_id)
+    available_users = UserDetail.objects.exclude(groups=team)
+    
+    if request.method == 'POST':
+        user_ids = request.POST.getlist('users')
+        selected_users = UserDetail.objects.filter(row_id__in=user_ids)
+        
+        # Get the team view permission
+        content_type = ContentType.objects.get_for_model(Ticket)
+        view_permission = Permission.objects.get(
+            codename='view_team_tickets',
+            content_type=content_type,
+        )
+        
+        # Assign permissions to selected users
+        for user in selected_users:
+            user.user_permissions.add(view_permission)
+            user.groups.add(team)  # Add user to group using the reverse relationship
+        
+        messages.success(request, f'Users added to team {team.name} successfully')
+        return redirect('team_list')
+    
+    context = {
+        'team': team,
+        'available_users': available_users,
+        'team_users': team.user_set.all()
+    }
+    return render(request, 'admin/assign_team_view.html', context)
+
+@permission_required(['tracker.can_assign_team_view'])
+def team_list(request):
+    """List all teams"""
+    teams = Group.objects.all().order_by('name')
+    return render(request, 'admin/team_list.html', {'teams': teams})
+
+@permission_required(['tracker.can_assign_team_view'])
+def team_view_list(request):
+    """List teams for view permission assignment"""
+    teams = Group.objects.all().order_by('name')
+    return render(request, 'admin/team_list.html', {'teams': teams})
+
+@permission_required(['tracker.can_assign_team_view'])
+def manage_team_view(request, team_id):
+    """Manage team view permissions"""
+    team = get_object_or_404(Group, id=team_id)
+    # Get all users who aren't in this team
+    team_users = UserDetail.objects.filter(groups=team)
+    available_users = UserDetail.objects.exclude(groups=team)
+    
+    if request.method == 'POST':
+        user_ids = request.POST.getlist('users')
+        selected_users = UserDetail.objects.filter(row_id__in=user_ids)
+        
+        # Get the team view permission
+        content_type = ContentType.objects.get_for_model(Ticket)
+        view_permission = Permission.objects.get(
+            codename='view_team_tickets',
+            content_type=content_type,
+        )
+        
+        # Assign permissions to selected users
+        for user in selected_users:
+            user.user_permissions.add(view_permission)
+            user.groups.add(team)  # Add user to group using the reverse relationship
+        
+        messages.success(request, f'Users added to team {team.name} successfully')
+        return redirect('team_list')
+    
+    context = {
+        'team': team,
+        'available_users': available_users,
+        'team_users': team_users  # Users already in the team
+    }
+    return render(request, 'admin/assign_team_view.html', context)
+
+@permission_required(['tracker.can_assign_team_view'])
+def manage_team_view(request, team_id):
+    """Manage team view permissions"""
+    team = get_object_or_404(Group, id=team_id)
+    team_users = UserDetail.objects.filter(groups=team)
+    available_users = UserDetail.objects.exclude(groups=team)
+    
+    if request.method == 'POST':
+        user_ids = request.POST.getlist('users')
+        selected_users = UserDetail.objects.filter(row_id__in=user_ids)
+        
+        # Get or create the team view permission
+        content_type = ContentType.objects.get_for_model(Ticket)
+        view_permission, created = Permission.objects.get_or_create(
+            codename='view_team_tickets',
+            content_type=content_type,
+            defaults={'name': 'Can view team tickets'}
+        )
+        
+        # Assign permissions and add users to group
+        for user in selected_users:
+            user.user_permissions.add(view_permission)
+            user.groups.add(team)
+        
+        messages.success(request, f'Users added to team {team.name} successfully')
+        return redirect('team_list')
+    
+    context = {
+        'team': team,
+        'available_users': available_users,
+        'team_users': team_users
+    }
+    return render(request, 'admin/assign_team_view.html', context)
+
+@permission_required(['tracker.can_assign_permissions'])
+def permission_list(request):
+    """Display list of users for permission management"""
+    users = UserDetail.objects.all().order_by('user_name')
+    return render(request, 'admin/permission_list.html', {'users': users})
+
+@permission_required(['tracker.can_assign_permissions'])
+def assign_user_permissions(request, user_id):
+    """Assign permissions to a specific user"""
+    user = get_object_or_404(UserDetail, row_id=user_id)
+    
+    if request.method == 'POST':
+        permission_ids = request.POST.getlist('permissions')
+        user.user_permissions.clear()
+        if permission_ids:
+            permissions = Permission.objects.filter(id__in=permission_ids)
+            user.user_permissions.add(*permissions)
+        messages.success(request, f'Permissions updated for {user.user_name}')
+        return redirect('permission_list')
+    
+    # Get available permissions
+    content_types = ContentType.objects.filter(app_label='tracker')
+    permissions = Permission.objects.filter(content_type__in=content_types)
+    
+    context = {
+        'user': user,
+        'permissions': permissions,
+        'current_permissions': user.user_permissions.all()
+    }
+    return render(request, 'admin/assign_permissions.html', context)
+

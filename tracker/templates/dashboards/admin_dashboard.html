@@ -3,150 +3,324 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <h1>Admin Dashboard</h1>
-    <div class="sidebar">
-        <!-- ...existing sidebar content... -->
-        <ul>
-            <li><a href="{% url 'user_list' %}">All Users</a></li>
-            <li><a href="{% url 'group_list' %}">All Groups</a></li>
-            <li><a href="{% url 'priority_list' %}">All Priorities</a></li>
-        </ul>
-    </div>
-    <div class="main-content">
-    <!-- Admin Actions -->
-    <div class="mb-4">
-        <a href="{% url 'add_user' %}" class="btn btn-primary">➕ Add New User</a>
-        <a href="{% url 'create_group' %}" class="btn btn-info">👥 Create Group</a>
-        <a href="{% url 'add_priority' %}" class="btn btn-warning">⚡ Add Priority</a>
-        <a href="{% url 'email_support_team' %}" class="btn btn-danger">📧 Email Support</a>
-    </div>
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="{% url 'user_list' %}" class="nav-link">
+                        👥 All Users
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'group_list' %}" class="nav-link">
+                        👥 All Groups
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'priority_list' %}" class="nav-link">
+                        ⚡ All Priorities
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'permission_list' %}" class="nav-link">
+                        🔑 User Permissions
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'team_view_list' %}" class="nav-link">
+                        👥 Team Permissions
+                    </a>
+                </li>
+                <li class="nav-item mt-auto">
+                    <a href="{% url 'logout' %}" class="nav-link text-danger">
+                        🚪 Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
 
-    <!-- Overview Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Total Users</h5>
-                    <h2>{{ total_users }}</h2>
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Dashboard Overview</h2>
+                <div class="action-buttons">
+                    <a href="{% url 'add_user' %}" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> New User
+                    </a>
+                    <a href="{% url 'create_group' %}" class="btn btn-info">
+                        <i class="fas fa-users"></i> New Group
+                    </a>
+                    <a href="{% url 'add_priority' %}" class="btn btn-warning">
+                        <i class="fas fa-flag"></i> New Priority
+                    </a>
+                    <a href="{% url 'email_support_team' %}" class="btn btn-danger">
+                        <i class="fas fa-envelope"></i> Support
+                    </a>
                 </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Active Tickets</h5>
-                    <h2>{{ total_tickets }}</h2>
+
+            <!-- Statistics Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-subtitle mb-2">Total Users</h6>
+                                    <h2 class="card-title mb-0">{{ total_users }}</h2>
+                                </div>
+                                <i class="fas fa-users fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-subtitle mb-2">Active Tickets</h6>
+                                    <h2 class="card-title mb-0">{{ total_tickets }}</h2>
+                                </div>
+                                <i class="fas fa-ticket-alt fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-subtitle mb-2">Total Teams</h6>
+                                    <h2 class="card-title mb-0">{{ total_teams }}</h2>
+                                </div>
+                                <i class="fas fa-user-friends fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-subtitle mb-2">Priorities</h6>
+                                    <h2 class="card-title mb-0">{{ total_priorities }}</h2>
+                                </div>
+                                <i class="fas fa-flag fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- User & Ticket Distribution -->
-    <div class="row mb-4">
-        <div class="col-md-6">
+            <!-- User & Ticket Analysis -->
+            <div class="row g-4 mb-4">
+                <!-- User Distribution -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>User Distribution</h5>
+                                <span class="badge bg-primary">{{ user_metrics|length }} Roles</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Role</th>
+                                            <th>Count</th>
+                                            <th>Percentage</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for metric in user_metrics %}
+                                        <tr>
+                                            <td>{{ metric.role__name|default:"No Role" }}</td>
+                                            <td>{{ metric.count }}</td>
+                                            <td>
+                                                <!-- <div class="progress">
+                                                    <div class="progress-bar" role="progressbar" 
+                                                         style="width: {{ metric.percentage|floatformat:2 }}%;">
+                                                        {{ metric.percentage }}%
+                                                    </div>
+                                                </div> -->
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ticket Status -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-ticket-alt me-2"></i>Ticket Status</h5>
+                                <span class="badge bg-success">{{ ticket_metrics|length }} States</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>Count</th>
+                                            <th>Progress</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for metric in ticket_metrics %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-{{ metric.status_color }}">
+                                                    {{ metric.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ metric.count }}</td>
+                                            <td>
+                                                <div class="progress">
+                                                    <!-- <div class="progress-bar bg-{{ metric.status_color }}" 
+                                                         role="progressbar" style="width: {% widthratio metric.percentage 1 1 %}%;">
+                                                        {{ metric.percentage }}%
+                                                    </div> -->
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Tickets -->
             <div class="card">
-                <div class="card-header">
-                    <h5>User Distribution</h5>
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Recent Tickets</h5>
+                        <a href="{% url 'all_tickets' %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-external-link-alt"></i> View All
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Role</th>
-                                <th>Count</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for metric in user_metrics %}
-                            <tr>
-                                <td>{{ metric.role__name|default:"No Role" }}</td>
-                                <td>{{ metric.count }}</td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="2" class="text-center">No user data available.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Ticket Status</h5>
-                </div>
-                <div class="card-body">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Status</th>
-                                <th>Count</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for metric in ticket_metrics %}
-                            <tr>
-                                <td>{{ metric.get_status_display }}</td>
-                                <td>{{ metric.count }}</td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="2" class="text-center">No ticket data available.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Ticket Management -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5>Recent Tickets</h5>
-                    <a href="{% url 'all_tickets' %}" class="btn btn-outline-primary">📋 View All Tickets</a>
-                </div>
-                <div class="card-body">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Subject</th>
-                                <th>Created By</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for ticket in recent_tickets %}
-                            <tr>
-                                <td>{{ ticket.id }}</td>
-                                <td>{{ ticket.subject }}</td>
-                                <td>{{ ticket.created_by.user_name }}</td>
-                                <td>{{ ticket.get_status_display }}</td>
-                                <td>
-                                    <a href="{% url 'view_ticket' ticket.id %}" class="btn btn-info btn-sm">🔍 View</a>
-                                    <a href="{% url 'transfer_ticket' ticket.id %}" class="btn btn-warning btn-sm">🔄 Transfer</a>
-                                    <!-- <a href="{% url 'delete_ticket' ticket.id %}" class="btn btn-danger btn-sm">🗑 Delete</a> -->
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center">No recent tickets.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Subject</th>
+                                    <th>Created By</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ticket in recent_tickets %}
+                                <tr>
+                                    <td>#{{ ticket.id }}</td>
+                                    <td>{{ ticket.subject }}</td>
+                                    <td>
+                                        <img src="{{ ticket.created_by.avatar_url|default:'default_avatar.png' }}" 
+                                             alt="User" class="avatar-sm rounded-circle me-2">
+                                        {{ ticket.created_by.user_name }}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ ticket.status_color }}">
+                                            {{ ticket.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'view_ticket' ticket.id %}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'transfer_ticket' ticket.id %}" 
+                                               class="btn btn-sm btn-outline-warning">
+                                                <i class="fas fa-exchange-alt"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">
+                                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                                        <p>No recent tickets found</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
 </div>
 {% endblock %}
+
+{% block extra_css %}
+<style>
+    .container-fluid {
+        padding: 0;
+    }
+    .d-flex {
+        display: flex;
+    }
+    .sidebar {
+        min-width: 250px;
+        height: 100vh;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-right: 1px solid #dee2e6;
+        position: sticky;
+        top: 0;
+    }
+    .sidebar .nav-link {
+        color: #333;
+        padding: 10px 15px;
+        border-radius: 5px;
+        margin-bottom: 5px;
+        transition: all 0.3s ease;
+    }
+    .sidebar .nav-link:hover {
+        background-color: #e9ecef;
+        color: #007bff;
+    }
+    .nav-item {
+        width: 100%;
+    }
+    .main-content {
+        padding: 20px;
+        flex-grow: 1;
+        min-height: 100vh;
+    }
+    .btn-group {
+        display: inline-block;
+        margin-left: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+{% endblock %}
+
+

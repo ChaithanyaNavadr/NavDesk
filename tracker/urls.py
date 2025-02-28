@@ -1,6 +1,5 @@
 from django.urls import path
 from . import views
-# from .views import ticket_superuser as admin_views
 
 urlpatterns = [
     #  Home URL
@@ -55,6 +54,13 @@ urlpatterns = [
     path('user/dashboard/', views.user_dashboard, name='user_dashboard'),
     path('employee/dashboard/', views.employee_dashboard, name='employee_dashboard'),
 
+    # Staff URLs
+    path('staff/dashboard/', views.staff_dashboard, name='staff_dashboard'),
+    path('staff/ticket/new/', views.staff_create_ticket, name='staff_create_ticket'),  # Updated URL
+    path('staff/tickets/<int:ticket_id>/', views.staff_view_ticket, name='staff_view_ticket'),
+    path('staff/tickets/<int:ticket_id>/comment/', views.staff_add_comment, name='staff_add_comment'),
+    path('staff/tickets/<int:ticket_id>/close/', views.staff_close_ticket, name='staff_close_ticket'),
+
     # User Management URLs
     path('admin/users/', views.user_list, name='user_list'),
     path('admin/users/add/', views.add_user, name='add_user'),
@@ -73,7 +79,27 @@ urlpatterns = [
     path("admin/priority/delete/<int:priority_id>/", views.delete_priority, name="delete_priority"),
     path('admin/team/<int:team_id>/assign-view/', views.assign_team_view, name='assign_team_view'),
 
+    # Permissions URLs
+    path('admin/permissions/', views.assign_permissions, name='permission_list'),
+    path('admin/permissions/<int:user_id>/', views.assign_user_permissions, name='assign_user_permissions'),
+    path('admin/team-view/', views.assign_team_view, name='assign_team_view'),
+    path('admin/team-view/<int:team_id>/', views.assign_team_view_permissions, name='assign_team_view_permissions'),
+
     # Settings URLs
     path('settings/', views.user_settings, name='user_settings'),
     path('admin/settings/', views.admin_settings, name='admin_settings'),
+
+    # Team Management URLs
+    path('admin/teams/', views.team_list, name='team_list'),
+    path('admin/team-view/', views.team_view_list, name='team_view_list'),
+    path('admin/team/<int:team_id>/manage/', views.manage_team_view, name='manage_team_view'),
+    
+    # Permission Management URLs
+    path('admin/permissions/', views.permission_list, name='permission_list'),
+    path('admin/permissions/<int:user_id>/', views.assign_user_permissions, name='assign_user_permissions'),
+    
+    # Priority Management URLs
+    path('admin/priority/add/', views.add_priority, name='add_priority'),
+    path('admin/priority/list/', views.priority_list, name='priority_list'),
+    path('admin/priority/delete/<int:priority_id>/', views.delete_priority, name='delete_priority'),
 ]

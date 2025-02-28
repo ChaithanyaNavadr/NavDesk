@@ -31,20 +31,25 @@ class Role(models.Model):
     CLIENT = 3
     EMPLOYEE = 4
     USER = 5
+    STAFF = 6
 
-    ROLE_CHOICES = (
+    ROLE_CHOICES = [
         (ADMIN, 'Admin'),
         (MANAGER, 'Manager'),
         (CLIENT, 'Client'),
         (EMPLOYEE, 'Employee'),
         (USER, 'User'),
-    )
+        (STAFF, 'Staff'),
+    ]
 
     id = models.PositiveSmallIntegerField(choices=ROLE_CHOICES, primary_key=True)
-    name = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=50)
 
     def __str__(self):
-        return self.name
+        return self.get_id_display()
+
+    def get_name_display(self):
+        return dict(self.ROLE_CHOICES)[self.id]
 
     @classmethod
     def setup_permissions(cls):
@@ -64,7 +69,7 @@ class Role(models.Model):
             'Client': ['view_client_dashboard'],
             'Employee': ['view_employee_dashboard'],
             'User': ['view_user_dashboard'],
-        }
+        }   
 
         content_type = ContentType.objects.get_for_model(Role)  # Assigning to Role Model
 
@@ -91,6 +96,11 @@ class Role(models.Model):
             ("can_email_support", "Can email support team"),
             ("can_assign_team_view", "Can assign team view permissions"),
             ("view_team_tickets", "Can view team tickets"),
+            ("create_ticket", "Can create tickets"),
+            ("view_ticket", "Can view tickets"),
+            ("comment_ticket", "Can comment on tickets"),
+            ("close_ticket", "Can close assigned tickets"),
+            ("view_org_tickets", "Can view organization tickets"),
         ]
 
 
@@ -269,3 +279,4 @@ class PasswordResetToken(models.Model):
 
     def __str__(self):
         return f"Password Reset Token for {self.user.user_id}"
+

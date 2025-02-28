@@ -28,7 +28,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
+# Keep this one at the top
+AUTH_USER_MODEL = 'tracker.UserDetail'  # Make sure this is set
 # Application definition
 
 INSTALLED_APPS = [
@@ -38,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'tracker',
+    'tracker.apps.TrackerConfig',  # Keep only this one, remove 'tracker'
 ]
 
 MIDDLEWARE = [
@@ -50,7 +51,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'tracker.middleware.audit_middleware.AuditMiddleware',
-
 ]
 
 ROOT_URLCONF = 'issues.urls'
@@ -168,9 +168,10 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Authentication backends
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-]
+# AUTHENTICATION_BACKENDS = [
+#     'tracker.backends.CustomAuthBackend',
+#     'django.contrib.auth.backends.ModelBackend',
+# ]
 
 # Login URL
 LOGIN_URL = 'login'
@@ -181,8 +182,8 @@ LOGOUT_REDIRECT_URL = 'login'
 JWT_SECRET_KEY = SECRET_KEY
 JWT_ALGORITHM = 'HS256'
 
-# Add this line to specify the custom user model
-AUTH_USER_MODEL = 'tracker.UserDetail'
+# Remove or comment out this duplicate at the bottom
+# AUTH_USER_MODEL = 'tracker.UserDetail'
 
 # Email Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
