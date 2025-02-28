@@ -1,0 +1,29 @@
+{
+	"short_name": "Foxnutt",
+  "name": "Foxnutt SF",
+  "icons": [
+    {
+      "src": "App_Resources/drawable-mdpi/icon.png",
+      "type": "image/png",
+      "sizes": "48x48"
+    },
+    {
+      "src": "App_Resources/drawable-xhdpi/icon.png",
+      "type": "image/png",
+      "sizes": "96x96"
+    },
+    {
+      "src": "App_Resources/drawable-xxhdpi/icon.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "App_Resources/drawable-xxxhdpi/icon.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ],
+	"background_color": "#393284",
+	"display": "standalone",
+	"theme_color": "#e8e8e8"
+}

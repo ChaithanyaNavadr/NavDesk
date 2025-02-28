@@ -1,0 +1,152 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1>Admin Dashboard</h1>
+    <div class="sidebar">
+        <!-- ...existing sidebar content... -->
+        <ul>
+            <li><a href="{% url 'user_list' %}">All Users</a></li>
+            <li><a href="{% url 'group_list' %}">All Groups</a></li>
+            <li><a href="{% url 'priority_list' %}">All Priorities</a></li>
+        </ul>
+    </div>
+    <div class="main-content">
+    <!-- Admin Actions -->
+    <div class="mb-4">
+        <a href="{% url 'add_user' %}" class="btn btn-primary">➕ Add New User</a>
+        <a href="{% url 'create_group' %}" class="btn btn-info">👥 Create Group</a>
+        <a href="{% url 'add_priority' %}" class="btn btn-warning">⚡ Add Priority</a>
+        <a href="{% url 'email_support_team' %}" class="btn btn-danger">📧 Email Support</a>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Users</h5>
+                    <h2>{{ total_users }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Active Tickets</h5>
+                    <h2>{{ total_tickets }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User & Ticket Distribution -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>User Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Role</th>
+                                <th>Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for metric in user_metrics %}
+                            <tr>
+                                <td>{{ metric.role__name|default:"No Role" }}</td>
+                                <td>{{ metric.count }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-center">No user data available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Ticket Status</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for metric in ticket_metrics %}
+                            <tr>
+                                <td>{{ metric.get_status_display }}</td>
+                                <td>{{ metric.count }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-center">No ticket data available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ticket Management -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Recent Tickets</h5>
+                    <a href="{% url 'all_tickets' %}" class="btn btn-outline-primary">📋 View All Tickets</a>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Subject</th>
+                                <th>Created By</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in recent_tickets %}
+                            <tr>
+                                <td>{{ ticket.id }}</td>
+                                <td>{{ ticket.subject }}</td>
+                                <td>{{ ticket.created_by.user_name }}</td>
+                                <td>{{ ticket.get_status_display }}</td>
+                                <td>
+                                    <a href="{% url 'view_ticket' ticket.id %}" class="btn btn-info btn-sm">🔍 View</a>
+                                    <a href="{% url 'transfer_ticket' ticket.id %}" class="btn btn-warning btn-sm">🔄 Transfer</a>
+                                    <!-- <a href="{% url 'delete_ticket' ticket.id %}" class="btn btn-danger btn-sm">🗑 Delete</a> -->
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No recent tickets.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1>Manager Dashboard</h1>
+    <div class="row mb-4">
+        <!-- Department Overview -->
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Department: {{ request.user.department }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <h5>Team Members</h5>
+                                    <h2>{{ department_users.count }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body">
+                                    <h5>Active Tickets</h5>
+                                    <h2>{{ department_tickets.count }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Add more metrics -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Performance -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Team Performance</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Add team performance metrics -->
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for key, value in team_performance.items %}
+                            <tr>
+                                <td>{{ key }}</td>
+                                <td>{{ value }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Department Tickets -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Recent Department Tickets</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Subject</th>
+                                <th>Assigned To</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in department_tickets %}
+                            <tr>
+                                <td>{{ ticket.id }}</td>
+                                <td>{{ ticket.subject }}</td>
+                                <td>{{ ticket.assigned_to.username }}</td>
+                                <td>{{ ticket.get_status_display }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

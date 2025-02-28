@@ -1,0 +1,79 @@
+<!-- {% extends 'shared/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}User Settings{% endblock %}
+
+{% block content %}
+<section class="d-flex">
+    <div class="container">
+        <div class="d-flex justify-content-center p-5">
+            <div class="card m-0">
+                <div class="p-3 border-bottom text-primary text-uppercase">
+                    User Preferences
+                </div>
+                <div class="p-3">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-horizontal">
+                            <div class="row mb-3">
+                                <div class="row mt-3">
+                                    <div class="col-sm-4">
+                                        <div class="form-inline">
+                                            Maximum Page Size <em>(Record per page)</em>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        <div class="d-flex">
+                                            <select name="page_size" id="ddlPageSize" class="form-control" style="width: 250px;">
+                                                <option value="8">8</option>
+                                                <option value="10">10</option>
+                                                <option value="25">25</option>
+                                                <option value="50">50</option>
+                                                <option value="100">100</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="row mt-3">
+                                    <div class="col-sm-4">
+                                        <div class="form-inline">
+                                            Ticket Sorting
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        <div class="d-flex">
+                                            <select name="sorting" id="ddlSorting" class="form-control" style="width: 250px;">
+                                                <option value="0">Priority</option>
+                                                <option value="1">New Ticket</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary btn-sm px-4">Save</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    getdata();
+});
+
+function getdata() {
+    const settings = "{{ request.session.settings }}".split('$');
+    $("#ddlPageSize").val(settings[0]);
+    $("#ddlSorting").val(settings[1]);
+}
+</script>
+{% endblock %} -->

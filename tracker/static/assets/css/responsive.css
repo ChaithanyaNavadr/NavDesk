@@ -1,0 +1,99 @@
+/*CSS Document for web responsive Layout*/
+
+/*css added by Ajay Kumar on 170718*/
+
+@media screen and (min-width:991px) {
+	.hidden_lg {
+		display: none
+	}
+}
+@media screen and (min-width:768px) {
+	.hidden_md {
+		display: none
+	}
+}
+@media screen and (max-width:1024px) {   
+   
+}
+@media screen and (max-width:992px) {
+	.login_bg {
+		background-size: cover;
+		background-position: 15%
+	}
+	#sidebar {
+		background: #fff;
+		display: none
+	}
+	.custom_block {
+		width: 100%;
+		padding: 0 15px 60px 15px !important
+	}
+	.comment_footer {
+		width: 100%;
+	}	
+}
+@media screen and (max-width:767px) {
+	.top_heading {
+		font-size: 15px;
+	}
+}
+@media screen and (max-width:576px) { 
+	.top_nav > nav > ul > li {
+		padding: 0 5px
+	}
+	.top_nav > nav > ul >  li > a {
+		width: 30px;
+		padding: 7px !important;
+		height: 30px;
+	}
+	td.sub_row {
+		max-width: 150px !important;
+	}
+	.thead_row th, .thead_row td {
+		padding: 5px;
+		font-size: 12px;
+	}
+	.ticket_no {
+    	font-size: 14px;
+	}
+	.ticket_name {
+    	font-size: 15px;	
+	}
+	.ticket_info {
+		font-size: 12px;
+		margin-top: 5px
+	}
+	.comment_tabs li a {
+		font-size: 14px;
+	}
+	.comment_input {
+		padding: 10px 10px 50px;
+	}
+	.thread_heading {
+		margin-bottom: 15px
+	}
+	.thread_heading .thread_time {
+		margin-left: 0;
+		width: 100%;
+		margin-top: 5px
+	}
+	.fs_block {
+		width: 100%
+	}
+}
+
+@media screen and (max-width: 500px) {
+	.main_logo {
+		max-width: 60px
+	}
+}
+@media screen and (max-width:480px) {
+
+}
+@media screen and (max-width:400px) {
+	
+}
+@media screen and (max-width:320px) {
+	
+}
+	

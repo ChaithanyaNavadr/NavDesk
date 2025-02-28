@@ -1,0 +1,71 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="{% static 'assets/favicon.svg' %}" type="image/svg+xml">
+    <meta name="theme-color" content="#ed2624">
+    <link rel="manifest" href="{% static 'assets/manifest.json' %}">
+    <title>{% block title %}Service Front by Foxnutt : A Support System{% endblock %}</title>
+
+    {% block css %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@100;200;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'assets/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/responsive.css' %}">
+    {% endblock %}
+</head>
+<body class="{% block body_class %}main_bg{% endblock %}">
+    {% block header %}{% endblock %}
+    
+    {% block layout %}
+    <div class="d-flex align-items-stretch">
+        {% block sidebar %}{% endblock %}
+        
+        <div class="{% block content_class %}w-75{% endblock %}" style="background: #e9e9e9;">
+            {% block content %}{% endblock %}
+        </div>
+        
+        <div class="comment_footer w-80">
+            {% block footer_content %}{% endblock %}
+        </div>
+    </div>
+    {% endblock %}
+
+    {% block footer %}
+    <div class="myfooter bg-light border-top p-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>&copy; Foxnutt {% now "Y" %}</div>
+            <div>Made with <span class="text-danger">&hearts;</span> in India.</div>
+            <div class="social-icons fs-5">
+                <a href="#"><span class="d-inline-flex zoom"><i class="bi bi-twitter" style="color: #1e9eeb;"></i></span></a>
+                <a href="#"><span class="d-inline-flex zoom"><i class="bi bi-facebook" style="color: #1771e6;"></i></span></a>
+                <a href="#"><span class="d-inline-flex zoom"><i class="bi bi-linkedin" style="color: #0c60b8;"></i></span></a>
+                <a href="#"><span class="d-inline-flex zoom"><i class="bi bi-youtube" style="color: #f20000;"></i></span></a>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+    <!-- Toast -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastPlacement">
+        <div id="toastMessage" role="alert" aria-live="assertive" aria-atomic="true" class="toast" data-bs-autohide="true">
+            <div class="d-flex">
+                <div id="toastBody" class="toast-body"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    {% block js %}
+    <script src="{% static 'assets/js/jquery.min.js' %}"></script>
+    <script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'assets/js/main.js' %}"></script>
+    {% endblock %}
+</body>
+</html>

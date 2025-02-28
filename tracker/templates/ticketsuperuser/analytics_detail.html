@@ -1,0 +1,158 @@
+{% extends 'shared/base_admin.html' %}
+{% load static %}
+
+{% block title %}Ticket Analytics Detail{% endblock %}
+
+{% block extra_css %}
+<style>
+    a { text-decoration: none; }
+    .scroller {
+        max-height: 250px;
+        overflow-y: auto;
+    }
+    #tblAllTickets tr th { text-align: left; }
+    #tblAllTickets tbody tr { 
+        height: 50px !important;
+        cursor: pointer;
+    }
+    /* Column widths */
+    #tblAllTickets tr td:nth-child(1) { width: 2%; }
+    #tblAllTickets tr td:nth-child(2) { width: 2%; }
+    #tblAllTickets tr td:nth-child(3) { width: 5%; }
+    #tblAllTickets tr td:nth-child(4) { width: 30%; }
+    #tblAllTickets tr td:nth-child(5),
+    #tblAllTickets tr td:nth-child(6),
+    #tblAllTickets tr td:nth-child(7),
+    #tblAllTickets tr td:nth-child(8) { width: 12%; }
+    
+    .dataTables_wrapper .dataTables_filter input, 
+    div#tblAllTickets_length {
+        height: 32px;
+        margin-bottom: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block sidebar_content %}
+<div class="m-3 card border-light shadow-sm">
+    <div class="border-bottom border-1 d-flex align-items-center stats_heading w-100">
+        <h4 class="d-flex h6 m-0 p-2 fw-bold fs-6">Tickets Status</h4>
+    </div>
+    <div id="divmyticket" class="tickets_info"></div>
+</div>
+{% endblock %}
+
+{% block main_content %}
+<div class="card border-light shadow-sm p-0 m-3">
+    <div class="top_section d-flex align-items-center justify-content-between">
+        <div class="pt-2 hidden_lg">
+            <div class="d-flex align-items-center justify-content-start">
+                <a href="#" id="toggle_menu" class="sidemenu">
+                    <img src="{% static 'assets/img/side_menu.svg' %}" class="img-fluid" alt="">
+                </a>
+                <div class="logo_section">
+                    <div class="main_logo">
+                        <img src="{% static 'assets/img/logo.png' %}" class="img-fluid" alt="Foxnutt">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="border-bottom border-1 d-flex w-100 flex-column p-3">
+            <h4 class="top_heading d-flex h6 m-0 p-1 fw-bold fs-6"></h4>
+            <p class="ticket_count ps-2 m-0 text-secondary"></p>
+            {% if messages %}
+            <div class="alert alert-primary fade show shadow-risen position-absolute update_alert">
+                {% for message in messages %}
+                    {{ message }}
+                {% endfor %}
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="mt-2 p-3">
+        <div class="table-responsive" id="divdata">
+            <div class="loader"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'assets/js/jstree.min.js' %}"></script>
+<script src="{% static 'assets/js/datatables.min.js' %}"></script>
+<script>
+$(document).ready(function() {
+    getdefault();
+});
+
+function getdefault() {
+    $.getJSON("{% url 'ticket_analytics_detail' %}", {
+        type: "{{ type }}",
+        ID: "{{ id }}",
+        from: "{{ from_date|default:'' }}",
+        to: "{{ to_date|default:'' }}"
+    }, function(data) {
+        alluserdata = data;
+        renderTicketStatus(data[1]);
+        $("#divmyticket").find("a:first").click();
+    });
+}
+
+function getalldata(sender, typename) {
+    const val = $(sender).attr('statusid');
+    $('#divmyticket').find('a').removeClass('active');
+    $(sender).addClass('active');
+
+    const json = alluserdata[0].filter(n => n.last_status == val);
+    $(".top_heading").html(`<span class='text-capitalize'>${alluserdata[2][0].Name}</span> - ${typename} Tickets`);
+    $(".ticket_count").html(`${json.length} Tickets`);
+
+    binddata(json);
+}
+
+function binddata(json) {
+    let html = `<table id="tblAllTickets" class="table table-hover">
+        <thead>
+            <tr>
+                <th>Sr</th>
+                <th>ID</th>
+                <th>Priority</th>
+                <th>Subject</th>
+                <th>Created By</th>
+                <th>Assigned To</th>
+                <th>Created Date</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>`;
+    
+    json.forEach((item, index) => {
+        html += `<tr onclick="viewticket(this)" ticket="${item.id}">
+            <td>${index + 1}</td>
+            <td>${item.ticket_id}</td>
+            <td>${item.priority}</td>
+            <td>${item.subject}</td>
+            <td>${item.created_by}</td>
+            <td>${item.assigned_to}</td>
+            <td>${item.created_date}</td>
+            <td>${item.status}</td>
+        </tr>`;
+    });
+    
+    html += '</tbody></table>';
+    $("#divdata").html(html);
+    
+    $('#tblAllTickets').DataTable({
+        "ordering": true,
+        "info": true,
+        "pageLength": 10
+    });
+}
+
+function viewticket(sender) {
+    const ticket_id = btoa($(sender).attr("ticket"));
+    window.location.href = "{% url 'admin_view_ticket' 0 %}".replace('0', ticket_id);
+}
+</script>
+{% endblock %}

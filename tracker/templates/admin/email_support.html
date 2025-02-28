@@ -1,0 +1,12 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<h2>Email Support Team</h2>
+<form method="POST">
+    {% csrf_token %}
+    <label for="subject">Subject:</label>
+    <input type="text" name="subject" required>
+    <label for="message">Message:</label>
+    <textarea name="message" required></textarea>
+    <button type="submit">Send Email</button>
+</form>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'shared/base_admin.html' %}
+{% load static %}
+
+{% block title %}Ticket Admin Home{% endblock %}
+
+{% block sidebar_content %}
+<div class="m-3 card border-light shadow-sm">
+    <div class="border-bottom border-1 d-flex align-items-center stats_heading w-100">
+        <h4 class="d-flex h6 m-0 p-2 fw-bold fs-6">Quick Actions</h4>
+    </div>
+    <div class="d-flex flex-column">
+        <a href="{% url 'admin_dashboard' %}" class="p-2 mb-1 d-flex flex-fill btn btn-light rounded-0 ps-3">Tickets</a>
+        <a href="{% url 'admin_analytics' %}" class="p-2 mb-1 d-flex flex-fill btn btn-light rounded-0 ps-3">Reports</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block main_content %}
+<div class="card border-light shadow-sm p-0 m-3">
+    <!-- Header section -->
+    <div class="top_section d-flex align-items-center justify-content-between">
+        <!-- ...existing header code... -->
+    </div>
+
+    <!-- Tickets Summary -->
+    <div class="card border-0 p-0s">
+        <div class="d-flex justify-content-between">
+            <div class="mt-7 p-4 w-50" id="divData"></div>
+            <div class="d-flex align-items-center">
+                <canvas id="myChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tickets Analysis -->
+    <div class="">
+        <!-- ...existing analysis code... -->
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.8.2/chart.min.js"></script>
+<script>
+$(document).ready(function() {
+    $("#txtsearch").prop('disabled', true);
+    getdefault();
+});
+
+function getdefault() {
+    $.getJSON("{% url 'admin_dashboard_summary' %}", function(data) {
+        // ...existing JavaScript...
+    });
+}
+
+// ...rest of your JavaScript functions...
+</script>
+{% endblock %}

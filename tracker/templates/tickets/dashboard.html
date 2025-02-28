@@ -1,0 +1,68 @@
+{% extends 'shared/dashboard_header.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    a { text-decoration: none; }
+    .scroller {
+        max-height: 250px;
+        overflow-y: auto;
+    }
+    /* ...existing styles... */
+</style>
+{% endblock %}
+
+
+
+{% block sidebar_content %}
+<div class="p-3">
+    <h4 class="h6 mt-1 border-bottom border-2 pb-1 border-primary">Assigned to Me</h4>
+    <div id="divassigned" class="tickets_info"></div>
+
+    <h4 class="h6 mt-1 border-bottom border-2 pb-1 border-primary">Created by Me</h4>
+    <div id="divmyticket" class="tickets_info"></div>
+
+    <h4 class="h6 mt-1 border-bottom border-2 pb-1 border-primary" id="heading_myview" style="display:none;">My View</h4>
+    <div class="dashboard_info scroller">
+        <div id="jstree"></div>
+    </div>
+
+    <h4 class="h6 mt-1 border-bottom border-2 pb-1 border-primary">Search All Tickets</h4>
+    <div class="input-group">
+        <input type="search" id="txtaSearch" class="form-control" placeholder="Ticket No/Subject">
+        <div class="input-group-append">
+            <button class="btn_search" type="button" onclick="getAdvSearch();">
+                <span class="material-symbols-outlined">search</span>
+            </button>
+        </div>
+    </div>
+    <span id="spnasearch" class="text-danger" style="display:none;"></span>
+    <div id="divasearch" class="tickets_info"></div>
+</div>
+{% endblock %}
+
+{% block main_content %}
+<div class="card border-light shadow-sm p-0 m-3">
+    <div class="top_section mt-1 d-flex shadow-sm align-items-start justify-content-between">
+        <div class="p-3 h5 m-0">
+            <h3 class="top_heading small fw-normal"></h3>
+            <p class="ticket_count"></p>
+        </div>
+    </div>
+    <div class="mt-2 p-3">
+        <div class="table-responsive" id="divdata" style="overflow:visible">
+            <div class="loader"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'assets/js/jstree.min.js' %}"></script>
+<script src="{% static 'assets/js/datatables.min.js' %}"></script>
+<script>
+// ...existing JavaScript code...
+</script>
+{% endblock %}

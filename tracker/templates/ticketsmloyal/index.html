@@ -1,0 +1,68 @@
+<!-- {% extends 'shared/base_dashboard.html' %} -->
+{% load static %}
+
+{% block title %}MLoyalty Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'assets/css/datatables.min.css' %}">
+<style>
+    a { text-decoration: none; }
+    .scroller {
+        max-height: 250px;
+        overflow-y: auto;
+    }
+    #tblAllTickets tr th { text-align: left; }
+    /* ...existing styles... */
+</style>
+{% endblock %}
+
+{% block sidebar_content %}
+<div class="logo_section hidden-xs pb-1 pt-2">
+    <div class="main_logo">
+        <img src="{% static 'assets/img/logo.png' %}" class="img-fluid" alt="Foxnutt">
+    </div>
+</div>
+<div class="pt-3">
+    <h4 class="side_heading mt-1">My Tickets</h4>
+    <div id="divmyticket" class="tickets_info"></div>
+</div>
+{% endblock %}
+
+{% block main_content %}
+<div class="pl-sm-3 pr-sm-3 pt-2">
+    {% include 'ticketsmloyal/includes/header.html' %}
+    
+    <div class="top_section mt-1 d-flex align-items-start justify-content-between">
+        <div>
+            <h3 class="top_heading"></h3>
+            <p class="ticket_count"></p>
+        </div>
+        {% if messages %}
+        <div class="alert alert-primary fade show shadow-risen position-absolute update_alert">
+            {% for message in messages %}
+                {{ message }}
+            {% endfor %}
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="main_block mt-2">
+        <div class="table-responsive" id="divdata" style="overflow:visible">
+            <p>Loading....</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'assets/js/datatables.min.js' %}"></script>
+<script>
+$(document).ready(function() {
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    bindtree();
+});
+
+// ... Rest of your JavaScript functions ...
+</script>
+{% endblock %}

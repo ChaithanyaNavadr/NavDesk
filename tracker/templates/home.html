@@ -1,0 +1,17 @@
+{% extends 'shared/base_outer.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="jumbotron text-center">
+        <h1 class="display-4">Welcome to NavDesk</h1>
+        <p class="lead">Get started by logging in or creating a new account.</p>
+        <hr class="my-4">
+        <div class="d-flex justify-content-center">
+            <a href="{% url 'login' %}" class="btn btn-primary btn-lg mx-2">Login</a>
+            <a href="{% url 'new_account' %}" class="btn btn-success btn-lg mx-2">Register</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends 'shared/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}User Settings{% endblock %}
+
+{% block main_content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">User Preferences</h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form id="settingsForm">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label class="form-label">Maximum Page Size (Records per page)</label>
+                            <select name="pagination" id="ddlPageSize" class="form-control" style="width: 250px;">
+                                <option value="8">8</option>
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Ticket Sorting</label>
+                            <select name="sorting" id="ddlSorting" class="form-control" style="width: 250px;">
+                                <option value="0">Priority</option>
+                                <option value="1">New Ticket</option>
+                            </select>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary px-4">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Set initial values
+    $("#ddlPageSize").val("{{ settings.pagination }}");
+    $("#ddlSorting").val("{{ settings.sorting }}");
+
+    // Handle form submission
+    $("#settingsForm").on('submit', function(e) {
+        e.preventDefault();
+        
+        $.ajax({
+            url: "{% url 'user_settings' %}",
+            type: "POST",
+            data: JSON.stringify({
+                pagination: $("#ddlPageSize").val(),
+                sorting: $("#ddlSorting").val()
+            }),
+            contentType: "application/json",
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    location.reload();
+                } else {
+                    alert("Error saving settings. Please try again.");
+                }
+            },
+            error: function(xhr, status, error) {
+                alert("Error saving settings. Please try again.");
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

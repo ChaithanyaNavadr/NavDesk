@@ -1,0 +1,16 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<h2>Assign Permissions to {{ user.user_name }}</h2>
+<form method="POST">
+    {% csrf_token %}
+    <label for="permissions">Select Permissions:</label>
+    <select name="permissions" multiple>
+        {% for perm in permissions %}
+            <option value="{{ perm.id }}" {% if perm in user.user_permissions.all %}selected{% endif %}>
+                {{ perm.name }}
+            </option>
+        {% endfor %}
+    </select>
+    <button type="submit">Assign Permissions</button>
+</form>
+{% endblock %}

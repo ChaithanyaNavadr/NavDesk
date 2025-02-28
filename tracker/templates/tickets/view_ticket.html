@@ -1,0 +1,179 @@
+{% extends 'shared/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}View Ticket #{{ ticket.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ticket-info { margin-bottom: 1.5rem; }
+    .ticket-meta { color: #6c757d; }
+    .edit-form { display: none; }
+    input, select, textarea {
+        max-width: 100%;
+    }
+    .commentbox {
+        border: 1px solid #ccc;
+        padding: 5px;
+    }
+    .highlight > img {
+        height: auto;
+        max-width: 100% !important;
+        vertical-align: bottom;
+    }
+    /* ...existing styles... */
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="card border-light shadow-sm pb-3 m-3">
+    <div class="top_section mt-1 d-flex shadow-sm align-items-start justify-content-between">
+        <div class="p-4 h5 m-0 text-primary">Ticket #{{ ticket.id }}</div>
+        <div class="p-4 d-flex align-items-center gap-3">
+            <span class="badge bg-{{ ticket.get_status_display|lower }}">{{ ticket.get_status_display }}</span>
+            {% if can_edit %}
+            <button id="editButton" class="btn btn-primary btn-sm">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="ticket-details p-4">
+        <!-- View Mode -->
+        <div id="viewMode">
+            <div class="ticket-info">
+                <h4>{{ ticket.subject }}</h4>
+                <div class="ticket-meta mb-3">
+                    <div>Created by: {{ ticket.created_by.username }}</div>
+                    <div>Created on: {{ ticket.created_at|date:"M d, Y H:i" }}</div>
+                    <div>Assigned to: {{ ticket.assigned_to.username|default:"Unassigned" }}</div>
+                    <div>Priority: {{ ticket.priority }}</div>
+                    {% if ticket.brand %}
+                    <div>Brand: {{ ticket.brand }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="ticket-description mb-4">
+                {{ ticket.description|safe }}
+            </div>
+        </div>
+
+        <!-- Edit Mode -->
+        {% if can_edit %}
+        <div id="editMode" class="edit-form">
+            <form method="post" action="{% url 'update_ticket' ticket.id %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label>Subject:</label>
+                    <input type="text" name="subject" class="form-control" value="{{ ticket.subject }}">
+                </div>
+
+                <div class="mb-3">
+                    <label>Assigned To:</label>
+                    <select name="assigned_to" class="form-control">
+                        <option value="">-- Unassigned --</option>
+                        {% for user in users %}
+                            <option value="{{ user.id }}" {% if ticket.assigned_to == user %}selected{% endif %}>
+                                {{ user.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label>Status:</label>
+                    <select name="status" class="form-control">
+                        {% for status_id, status_name in status_choices %}
+                            <option value="{{ status_id }}" {% if ticket.status == status_id %}selected{% endif %}></option>
+                                {{ status_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label>Priority:</label>
+                    <select name="priority" class="form-control">
+                        {% for priority_value, priority_name in priority_choices %}
+                            <option value="{{ priority_value }}" {% if ticket.priority == priority_value %}selected{% endif %}>
+                                {{ priority_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="text-end mt-3">
+                    <button type="button" class="btn btn-secondary me-2" onclick="toggleEditMode()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Attachments Section -->
+        {% if attachments %}
+        <div class="attachments mb-4">
+            <h5>Attachments</h5>
+            <ul class="list-unstyled">
+                {% for attachment in attachments %}
+                <li>
+                    <a href="{{ attachment.file.url }}" target="_blank">
+                        <i class="fas fa-paperclip"></i> {{ attachment.file_name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Comments Section -->
+        {% if comments %}
+        <div class="comments">
+            <h5>Comments</h5>
+            {% for comment in comments %}
+            <div class="comment card mb-3">
+                <div class="card-body">
+                    <div class="comment-meta text-muted mb-2">
+                        <small>{{ comment.user.username }} commented on {{ comment.created_at|date:"M d, Y H:i" }}</small>
+                    </div>
+                    {{ comment.comment|safe }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'assets/Scripts/ckeditor/ckeditor.js' %}"></script>
+<script>
+// Check if we should show edit mode immediately
+document.addEventListener('DOMContentLoaded', function() {
+    if (sessionStorage.getItem('editMode') === 'true') {
+        sessionStorage.removeItem('editMode'); // Clear the flag
+        toggleEditMode();
+    }
+});
+
+function toggleEditMode() {
+    const viewMode = document.getElementById('viewMode');
+    const editMode = document.getElementById('editMode');
+    const editButton = document.getElementById('editButton');
+
+    if (viewMode.style.display !== 'none') {
+        viewMode.style.display = 'none';
+        editMode.style.display = 'block';
+        editButton.style.display = 'none';
+    } else {
+        viewMode.style.display = 'block';
+        editMode.style.display = 'none';
+        editButton.style.display = 'inline-block';
+    }
+}
+
+document.getElementById('editButton')?.addEventListener('click', toggleEditMode);
+</script>
+{% endblock %}

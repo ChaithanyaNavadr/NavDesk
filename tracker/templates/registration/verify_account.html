@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Verify Account{% endblock %}
+
+{% block content %}
+<div class="d-flex m-5 justify-content-center">
+    <div class="card p-0 m-0 w-50">
+        <div class="border-bottom">
+            <h5 class="text-primary p-3 m-0">Account Verification</h5>
+        </div>
+        <div class="p-4">
+            {% if success %}
+                <div class="alert alert-success">
+                    <strong>Success!</strong> Your account has been activated successfully.
+                    Click here to <a href="{% url 'login' %}">Login</a>.
+                </div>
+            {% else %}
+                <div class="alert alert-danger">
+                    <strong>Error!</strong> {{ error_message }}
+                </div>
+            {% endif %}
+        </div>
+        <div class="border-top">
+            <div class="text-primary p-3 m-0 d-flex justify-content-end">
+                <a href="{% url 'login' %}" class="nav-link">Continue to Login</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

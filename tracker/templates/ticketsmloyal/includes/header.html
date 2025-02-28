@@ -1,0 +1,27 @@
+<div class="top_section d-flex align-items-center justify-content-between">
+    <div class="pt-2 hidden_lg">
+        <div class="d-flex align-items-center justify-content-start">
+            <a href="#" id="toggle_menu" class="sidemenu">☰ Menu</a>
+            <div class="logo_section">
+                <div class="main_logo">
+                    <span class="logo_text">Foxnutt</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="top_search hidden-xs">
+        <input type="search" id="txtsearch" class="form-control" placeholder="Search...">
+    </div>
+    
+    <div class="top_nav">
+        <nav class="navbar navbar-expand-lg navbar-light">
+            <ul class="">
+                <li class="nav-item">
+                    <a href="#" class="ticket_backbtn" onclick="history.back();" data-bs-toggle="tooltip" title="Back">← Back</a>
+                </li>
+                {% include 'shared/user_menu.html' %}
+            </ul>
+        </nav>
+    </div>
+</div>

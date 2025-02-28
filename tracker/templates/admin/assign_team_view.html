@@ -1,0 +1,36 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Assign Team View Permissions - {{ team.name }}</h2>
+    
+    <form method="POST">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="users">Select Users:</label>
+            <select name="users" id="users" multiple class="form-control">
+                {% for user in available_users %}
+                    <option value="{{ user.row_id }}">{{ user.user_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary">Assign Permissions</button>
+            <a href="{% url 'group_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+    
+    {% if team_users %}
+    <div class="mt-4">
+        <h3>Current Team Members</h3>
+        <ul class="list-group">
+            {% for user in team_users %}
+                <li class="list-group-item">{{ user.user_name }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

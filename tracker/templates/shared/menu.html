@@ -1,0 +1,52 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'role_based_dashboard' %}">Ticket System</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                {% if user.is_authenticated %}
+                    {% if user.is_admin %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'all_tickets' %}">All Tickets</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#">User Management</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#">System Settings</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#">Analytics</a></li>
+                    {% elif user.is_manager %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'manager_dashboard' %}">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#">Team Management</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#">Department Tickets</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#">Performance Reports</a></li>
+                    {% elif user.is_client %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'client_dashboard' %}">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'new_ticket' %}">New Ticket</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'all_tickets' %}">My Tickets</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#">Service Metrics</a></li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'user_dashboard' %}">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'new_ticket' %}">New Ticket</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'all_tickets' %}">My Tickets</a></li>
+                    {% endif %}
+                {% endif %}
+            </ul>
+            <ul class="navbar-nav">
+                {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'user_settings' %}">Settings</a></li>
+                            <li><a class="dropdown-item" href="{% url 'change_password' %}">Change Password</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>

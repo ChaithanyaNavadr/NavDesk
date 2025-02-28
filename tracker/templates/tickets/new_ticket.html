@@ -1,0 +1,164 @@
+{% extends 'shared/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}New Ticket{% endblock %}
+
+{% block extra_css %}
+<style>
+    input, select, textarea {
+        max-width: 100%;
+    }
+    .p_btn {
+        background-color: transparent;
+        border: 1px solid #0673D9;
+        color: #0673D9;
+        padding: 4px 8px;
+        font-size: 12px;
+        cursor: pointer;
+        display: inline-block;
+        border-radius: .25rem;
+    }
+</style>
+{% endblock %}
+
+{% block sidebar_content %}
+<div class="mt-5 hidden-xs hidden_md"></div>
+<!-- <div class="px-2">
+    <div class="my-3">
+        <label>Assignee: <span class="text-danger">*</span></label>
+        <div class="ticket_select">
+            <select id="ddlassignee" class="form-control">
+                <option value="0">-- Select --</option>
+                <option value="me">Assign to Me</option>
+                <option value="team">Assign to Team</option>
+                <option value="admin">Assign to Admin</option>
+                {% for user in users %}
+                    <option value="{{ user.id }}">{{ user.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <span id="spnddlassignee" class="text-danger" style="display:none;"></span>
+    </div>
+
+    <div class="my-3">
+        <label>Priority</label>
+        <div class="ticket_select">
+            <select id="ddlpriority" class="form-control">
+                <option value="0">-- Select --</option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+            </select>
+        </div>
+        <span id="spnpriority" class="text-danger" style="display:none;"></span>
+    </div>
+
+    <div class="my-3">
+        <label>Brand</label>
+        <div class="ticket_select">
+            <select id="ddlbrand" class="form-control">
+                <option value="0">-- Select --</option>
+                <option value="brand1">Brand 1</option>
+                <option value="brand2">Brand 2</option>
+                <option value="brand3">Brand 3</option>
+                <option value="all">All Brands</option>
+            </select>
+        </div>
+        <span id="spnddlbrand" class="text-danger" style="display:none;"></span>
+    </div>
+
+    <div class="my-3">
+        <label>CCs</label>
+        <div class="ticket_input">
+            <input type="text" id="txtccs" class="form-control" data-role="tagsinput">
+        </div>
+        <span id="spntxtccs" class="text-danger" style="display:none;"></span>
+    </div>
+</div> -->
+{% endblock %}
+
+{% block main_content %}
+<div class="card border-light shadow-sm pb-3 m-3">
+    <div class="top_section mt-1 d-flex shadow-sm align-items-start justify-content-between">
+        <div class="p-4 h5 m-0 text-primary">Add New Ticket</div>
+    </div>
+    <div class="main_wrapper">
+        <div class="main_block_ta border border-light rounded-2">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                <div class="mb-3">
+                    <label>Subject: <span class="text-danger">*</span></label>
+                    <div class="ticket_input">
+                        <input type="text" name="subject" id="txtSubject" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label>Description: <span class="text-danger">*</span></label>
+                    <div class="comment_area">
+                        <textarea name="description" id="txtDescription" class="comment_input form-control" rows="5" required></textarea>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label>Assignee: <span class="text-danger">*</span></label>
+                    <select name="assignee" id="ddlassignee" class="form-control" required>
+                        <option value="">-- Select --</option>
+                        <option value="me">Assign to Me</option>
+                        <option value="team">Assign to Team</option>
+                        <option value="admin">Assign to Admin</option>
+                        {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label>Priority:</label>
+                    <select name="priority" id="ddlpriority" class="form-control">
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label>Brand:</label>
+                    <select name="brand" id="ddlbrand" class="form-control">
+                        <option value="">-- Select --</option>
+                        <option value="brand1">Brand 1</option>
+                        <option value="brand2">Brand 2</option>
+                        <option value="brand3">Brand 3</option>
+                        <option value="all">All Brands</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label>Attachments:</label>
+                    <input type="file" name="attachments" multiple class="form-control">
+                </div>
+
+                <div class="text-end mt-3">
+                    <button type="submit" class="btn btn-primary">Submit Ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'assets/Scripts/ckeditor/ckeditor.js' %}"></script>
+<script>
+    CKEDITOR.replace('txtDescription');
+</script>
+{% endblock %}

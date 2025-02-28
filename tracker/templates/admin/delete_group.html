@@ -1,0 +1,13 @@
+{% extends 'admin/base_admin.html' %}
+{% block content %}
+<div class="container">
+    <h2>Delete Group</h2>
+    <p>Are you sure you want to delete the group "{{ group.name }}"?</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete</button>
+        <a href="{% url 'group_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
+    <meta name="theme-color" content="#ed2624">
+    <link rel="manifest" href="{% static 'assets/manifest.json' %}">
+    <title>{% block title %}Service Front by Foxnutt{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@100;200;500;700&display=swap" rel="stylesheet">
+    
+    {% block css %}
+    <link href="{% static 'assets/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
+    {% endblock %}
+</head>
+
+<body class="login_bg">
+    <header class="d-flex bg-dark justify-content-between align-items-center pl-3 py-4">
+        <div>
+            <div class="d-flex justify-content-start align-items-center ms-2">
+                <a href="/" title="Foxnutt" class="foxnutt-logo"></a>
+                <span class="service-front mx-2 h5 mb-0">Service Front</span>
+            </div>
+        </div>
+        <div class="d-flex align-items-center">
+            <nav class="bg-dark pe-2">
+                <ul class="d-flex justify-content-end m-auto">
+                    <li class="me-3">
+                        <a href="#" class="ticket_backbtn" data-bs-toggle="tooltip" title="Back" onclick="history.back(); return false;">
+                            <span class="material-symbols-outlined text-white">arrow_back</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    {% block content %}{% endblock %}
+
+    <!-- Toast -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastPlacement">
+        <div id="toastMessage" role="alert" aria-live="assertive" aria-atomic="true" class="toast" data-bs-autohide="false">
+            <div class="d-flex">
+                <div id="toastBody" class="toast-body"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    {% block js %}
+    <script src="{% static 'assets/js/jquery.min.js' %}"></script>
+    <script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'assets/js/main.js' %}"></script>
+    {% endblock %}
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

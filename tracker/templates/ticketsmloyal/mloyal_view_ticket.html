@@ -1,0 +1,70 @@
+{% extends 'shared/base.html' %}
+<!-- {% load static %} -->
+
+{% block title %}MLoyalty View Ticket{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'assets/css/select2.min.css' %}" rel="stylesheet">
+<link href="{% static 'assets/css/tagsinput.css' %}" rel="stylesheet">
+<style>
+    input, select, textarea { max-width: 100%; }
+    .commentbox {
+        border: 1px solid #ccc;
+        padding: 5px;
+    }
+    .highlight > img {
+        height: auto;
+        max-width: 100% !important;
+        vertical-align: bottom;
+    }
+    /* ...existing styles... */
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- <div class="top_section d-flex align-items-center justify-content-between">
+    {% include 'ticketsmloyal/includes/header.html' %}
+</div> -->
+
+<div class="top_section mt-1 d-flex align-items-start justify-content-between pl-3">
+    <div>
+        <h5 class="ticket_no"></h5>
+        <h3 class="ticket_name"></h3>
+        <p class="ticket_info"><span class="sep"></span></p>
+    </div>
+</div>
+
+<div class="main_wrapper">
+    <div class="main_block_ta">
+        <div class="thread_section" id="divData"></div>
+    </div>
+</div>
+
+<input type="hidden" id="hdnticketid" value="{{ ticket_id }}">
+<input type="hidden" id="hdntickettoreply" value="">
+<input type="hidden" id="hdncurruser" value="{{ request.user.id }}">
+<input type="hidden" id="hdnsubject" value="">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'assets/js/ckeditor/ckeditor.js' %}"></script>
+<script src="{% static 'assets/js/tagsinput.js' %}"></script>
+<script>
+var arrComment = null;
+var fileList = [];
+
+$(document).ready(function() {
+    bindmaster();
+    $("#txtsearch").hide();
+    loadTicketDetails();
+});
+
+function loadTicketDetails() {
+    $.get("{% url 'view_ticket_detail' ticket_id %}", function(data) {
+        // ...existing JavaScript...
+    });
+}
+
+// ... Rest of your JavaScript functions ...
+</script>
+{% endblock %}

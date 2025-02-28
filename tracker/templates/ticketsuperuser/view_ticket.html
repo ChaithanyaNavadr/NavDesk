@@ -1,0 +1,57 @@
+{% extends 'shared/base_admin.html' %}
+{% load static %}
+
+{% block title %}View Ticket - Admin{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'assets/css/select2.min.css' %}" rel="stylesheet">
+<link href="{% static 'assets/css/tagsinput.css' %}" rel="stylesheet">
+<style>
+    input, select, textarea { max-width: 100%; }
+    .commentbox {
+        border: 1px solid #ccc;
+        padding: 5px;
+    }
+    /* ...existing styles... */
+</style>
+{% endblock %}
+
+{% block sidebar_content %}
+<div class="mt-5 hidden-xs hidden_md"></div>
+<div class="px-4 w-100">
+    <div class="my-3">
+        <label>Assignee: <span class="text-danger">*</span></label>
+        <div class="ticket_select">
+            <select id="ddlassignee" class="form-control">
+                <option value="0">-- Select --</option>
+            </select>
+        </div>
+        <span id="spnddlassignee" class="text-danger" style="display:none;"></span>
+    </div>
+    <!-- ...rest of the form fields... -->
+</div>
+{% endblock %}
+
+{% block main_content %}
+<div class="card border-0 pb-3 mb-3">
+    <!-- ...existing content... -->
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'assets/js/ckeditor/ckeditor.js' %}"></script>
+<script>
+var arrComment = null;
+const toastEl = $('#toastMessage');
+const toast = new bootstrap.Toast(toastEl);
+
+$(document).ready(function() {
+    $('#hdnreplytype').val("0");
+    $("#txtsearch").hide();
+    $("#hdnticketid").val(atob("{{ ticket_id }}"));
+    bindmaster();
+});
+
+// ...rest of your JavaScript functions...
+</script>
+{% endblock %}

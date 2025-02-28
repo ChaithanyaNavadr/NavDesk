@@ -1,0 +1,52 @@
+{% extends 'shared/base.html' %}
+{% load static %}
+
+{% block css %}
+{{ block.super }}
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+{% endblock %}
+
+{% block layout %}
+<div class="d-flex align-items-stretch">
+    <div class="w-80 custom_block m-auto">
+        {% block main_content %}{% endblock %}
+    </div>
+    <div class="comment_footer w-80">
+        {% block footer_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{{ block.super }}
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script>
+const toast = new bootstrap.Toast($('#toastMessage'));
+
+$(document)
+    .ajaxStart(function() {
+        $('.dvloader').addClass('d-flex');
+    })
+    .ajaxStop(function() {
+        $('.dvloader').removeClass('d-flex');
+    })
+    .ajaxError(function(event, xhr, options, exc) {
+        $('.dvloader').removeClass('d-flex');
+        handleError(xhr, options, exc);
+    });
+
+function handleError(xhr, errorType, exception) {
+    const toastEl = $('#toastMessage');
+    toastEl.addClass('bg-danger text-white');
+    
+    try {
+        const responseText = JSON.parse(xhr.responseText);
+        $('#toastBody').html(`Oops... <div>${exception}, please try again.</div>`);
+    } catch (e) {
+        $('#toastBody').html(`Oops... <div>${xhr.responseText}, please try again.</div>`);
+    }
+    
+    toast.show();
+}
+</script>
+{% endblock %}

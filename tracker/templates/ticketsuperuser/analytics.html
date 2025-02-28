@@ -1,0 +1,47 @@
+{% extends 'shared/base_admin.html' %}
+{% load static %}
+
+{% block title %}Ticket Analytics{% endblock %}
+
+{% block sidebar_content %}
+<div class="m-3 card border-light shadow-sm">
+    <div class="border-bottom border-1 d-flex align-items-center stats_heading w-100">
+        <h4 class="d-flex h6 m-0 p-2 fw-bold fs-6">Refine Results</h4>
+    </div>
+    <div class="px-3 pb-4">
+        <div class="my-3">
+            <label>Type: <span class="text-danger">*</span></label>
+            <div class="ticket_select">
+                <select id="ddlType" class="small" onchange="getdefault();">
+                    <option value="1" selected>Brand</option>
+                    <option value="2">Group</option>
+                    <option value="3">User</option>
+                </select>
+            </div>
+        </div>
+        <!-- Date filters -->
+        <!-- ...existing filters... -->
+    </div>
+</div>
+{% endblock %}
+
+{% block main_content %}
+<div class="card border-light shadow-sm p-0 m-3">
+    <!-- ...existing content... -->
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'assets/js/datatables.min.js' %}"></script>
+<script>
+$(document).ready(function() {
+    $(".datepicker").datepicker({
+        dateFormat: "dd-M-yy",
+        maxDate: new Date()
+    });
+    getdefault();
+});
+
+// ...rest of your JavaScript functions...
+</script>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<h2>Add User</h2>
+<form method="POST">
+    {% csrf_token %}
+    
+    <label for="email">Email/User ID:</label>
+    <input type="email" name="email" required>
+
+    <label for="user_name">User Name:</label>
+    <input type="text" name="user_name" required>
+
+    <label for="password">Password:</label>
+    <input type="password" name="password" required>
+
+    <label for="confirm_password">Confirm Password:</label>
+    <input type="password" name="confirm_password" required>
+
+    <label for="role">Select Role:</label>
+    <select name="role" id="role" required>
+        {% for role in roles %}
+            <option value="{{ role.id }}">{{ role.name }}</option>
+        {% endfor %}
+    </select>
+
+    <div id="departmentField" style="display: none;">
+        <label for="department">Department:</label>
+        <input type="text" name="department">
+    </div>
+
+    <button type="submit">Create User</button>
+</form>
+
+<script>
+document.getElementById("role").addEventListener("change", function() {
+    var departmentField = document.getElementById("departmentField");
+    if (this.value == "{{ Role.EMPLOYEE }}") {
+        departmentField.style.display = "block";
+    } else {
+        departmentField.style.display = "none";
+    }
+});
+</script>
+
+{% endblock %}
