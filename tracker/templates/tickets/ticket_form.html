@@ -1,0 +1,11 @@
+<div class="form-group">
+    <label for="id_priority">Priority</label>
+    <select class="form-control" id="id_priority" name="priority" required>
+        <option value="">Select Priority</option>
+        {% for priority in form.priority.field.queryset %}
+            <option value="{{ priority.id }}" {% if form.priority.value == priority.id %}selected{% endif %}>
+                {{ priority.name }}
+            </option>
+        {% endfor %}
+    </select>
+</div>

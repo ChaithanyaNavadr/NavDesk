@@ -19,6 +19,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, View
+from django.template.exceptions import TemplateDoesNotExist
 
 import json
 import jwt
@@ -47,20 +48,38 @@ def home(request):
     return render(request, 'home.html')
 
 @login_required_with_message
-def role_based_dashboard(request):
-    """Redirect to appropriate dashboard based on user role"""
-    if request.user.is_admin():
-        return redirect('admin_dashboard')
-    elif request.user.is_manager():
-        return redirect('manager_dashboard')
-    elif request.user.is_client():
-        return redirect('client_dashboard')
-    elif request.user.is_staff():  # Add staff check
-        return redirect('staff_dashboard')
-    elif request.user.is_employee():
-        return redirect('employee_dashboard')
-    else:
-        return redirect('user_dashboard')
+def role_based_dashboard(request, role=None):
+    """
+    Dynamic dashboard view based on user role
+    """
+    user = request.user
+    if not role:
+        role = user.role.name.lower() if user.role else 'user'
+    
+    if not user.role or user.role.name.lower() != role:
+        messages.error(request, "Access denied. Invalid role.")
+        return redirect('home')
+    
+    # Prepare context based on role
+    context = {'user': user}
+    
+    if role == 'staff':
+        context.update({
+            'assigned_tickets': Ticket.objects.filter(assigned_to=user),
+            'created_tickets': Ticket.objects.filter(created_by=user)
+        })
+    elif role == 'admin':
+        context.update({
+            'all_tickets': Ticket.objects.all(),
+            'users': UserDetail.objects.all()
+        })
+    # Add more role-specific context as needed
+    
+    try:
+        return render(request, f'dashboards/{role}_dashboard.html', context)
+    except TemplateDoesNotExist:
+        messages.error(request, f"Dashboard template for {role} not found.")
+        return redirect('home')
 
 @role_required([Role.ADMIN])  # Changed from @superuser_required
 def admin_dashboard(request):
@@ -160,25 +179,45 @@ def staff_dashboard(request):
 
 @role_required([Role.STAFF])
 def staff_create_ticket(request):
+    """Staff can create tickets"""
     if request.method == 'POST':
-        form = StaffTicketForm(request.POST)
+        form = StaffTicketForm(request.POST, request.FILES)
         if form.is_valid():
             ticket = form.save(commit=False)
             ticket.created_by = request.user
+            
+            # Set default priority if not specified
+            if not ticket.priority:
+                default_priority = Priority.objects.get_or_create(name='Medium')[0]
+                ticket.priority = default_priority
+            
+            # Set status to active/open
+            ticket.status = 'ACTIVE'
+            
+            # Save the ticket
             ticket.save()
-            messages.success(request, 'Ticket created successfully.')
-            return redirect('staff_view_ticket', ticket_id=ticket.id)
+            
+            # Handle file attachments if any
+            files = request.FILES.getlist('attachments')
+            for file in files:
+                TicketAttachment.objects.create(
+                    ticket=ticket,
+                    file=file,
+                    file_name=file.name,
+                    uploaded_by=request.user
+                )
+            
+            messages.success(request, f'Ticket #{ticket.id} created successfully.')
+            return redirect('staff_dashboard')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
-        form = StaffTicketForm(initial={
-            'assigned_to': request.user
-        })
+        form = StaffTicketForm()
     
     context = {
         'form': form,
-        'title': 'Create New Ticket',
-        'priorities': Priority.objects.all()  # Pass all priorities to template
+        'priorities': Priority.objects.all(),
+        'users': UserDetail.objects.filter(is_active=True)
     }
     return render(request, 'staff/create_ticket.html', context)
 
@@ -264,19 +303,12 @@ def login_view(request):
         
         if user is not None:
             login(request, user)
-
-            # Redirect based on permissions
-            if user.has_perm('tracker.view_admin_dashboard'):
-                return redirect('admin_dashboard')
-            elif user.has_perm('tracker.view_manager_dashboard'):
-                return redirect('manager_dashboard')
-            elif user.has_perm('tracker.view_client_dashboard'):
-                return redirect('client_dashboard')
-            elif user.has_perm('tracker.view_employee_dashboard'):
-                return redirect('employee_dashboard')
             
-            # Default redirect for normal users
-            return redirect('user_dashboard')
+            if hasattr(user, 'role') and user.role:
+                role = user.role.name.lower()
+                return redirect('role_based_dashboard', role=role)
+            
+            return redirect('role_based_dashboard', role='user')
         else:
             messages.error(request, "Invalid email or password.")
     
@@ -423,7 +455,7 @@ def change_password(request):
             return redirect("change_password")
             
         if len(new_password) < 8:
-            messages.error(request, "Password must be at least 8 characters long.")
+            messages.error(request, "Password must be at least  characters long.")
             return redirect("change_password")
             
         if not request.user.check_password(old_password):
@@ -602,25 +634,12 @@ def advanced_search(request):
 
 @login_required_with_message  # Remove role_required decorator for now
 def view_ticket(request, ticket_id):
-    try:
-        # Only allow viewing if user is the creator
-        ticket = Ticket.objects.get(id=ticket_id, created_by=request.user)
-        attachments = TicketAttachment.objects.filter(ticket=ticket)
-        comments = ticket.comments.all().order_by('-created_at')
-
-        context = {
-            'ticket': ticket,
-            'attachments': attachments,
-            'comments': comments,
-            'status_choices': Ticket.STATUS_CHOICES,
-            'priority_choices': Ticket.PRIORITY_CHOICES,
-            'can_edit': True,  # Creator can always edit
-            'users': User.objects.filter(is_active=True)
-        }
-        return render(request, "tickets/view_ticket.html", context)
-    except Ticket.DoesNotExist:
-        messages.error(request, "Ticket not found or you don't have permission to view it")
-        return redirect("all_tickets")
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    context = {
+        'ticket': ticket,
+        'priority_name': ticket.priority.name if ticket.priority else 'Not Set'
+    }
+    return render(request, 'tickets/view_ticket.html', context)
 
 @login_required_with_message
 def view_ticket_detail(request, ticket_id):
@@ -1004,76 +1023,65 @@ class TicketDataView(LoginRequiredMixin, View):
         return JsonResponse(results, safe=False)
 
 
-@permission_required(['tracker.can_add_users'])
+@permission_required('tracker.can_add_users')
 def add_user(request):
     """Admin can add users with role selection"""
+    # Get role choices for the template
+    role_choices = Role.ROLE_CHOICES
+
     if request.method == "POST":
         email = request.POST.get('email')
         user_name = request.POST.get('user_name')
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
         role_id = request.POST.get('role')
-        department = request.POST.get('department', None)
+
+        # Validate inputs
+        if not all([email, user_name, password, role_id]):
+            messages.error(request, "All fields are required!")
+            return render(request, "admin/add_user.html", {"role_choices": role_choices})
 
         if password != confirm_password:
             messages.error(request, "Passwords do not match.")
-            return redirect("add_user")
-
-        if not email or not user_name or not password or not role_id:
-            messages.error(request, "All fields are required!")
-            return redirect("add_user")
+            return render(request, "admin/add_user.html", {"role_choices": role_choices})
 
         try:
-            role = Role.objects.get(id=role_id)
+            # Convert and validate role_id
+            role_id = int(role_id)
+            if role_id not in dict(Role.ROLE_CHOICES):
+                raise ValueError("Invalid role selected")
 
-            # If role is Employee or Staff, ensure department is provided
-            if role.id in [Role.EMPLOYEE, Role.STAFF] and not department:
-                messages.error(request, "Department is required for employees and staff users.")
-                return redirect("add_user")
+            # Get role object
+            role = Role.objects.get(id=role_id)
 
             # Create user
             user = UserDetail.objects.create_user(
                 user_id=email,
                 user_name=user_name,
-                password=make_password(password),
+                password=password,
                 role=role,
-                department=department if role.id in [Role.EMPLOYEE, Role.STAFF] else None,
-                is_active=True,
-                is_staff=True if role.id == Role.STAFF else False  # Set is_staff for staff users
+                is_active=True
             )
 
-            # Assign user to the correct group and permissions
-            group, _ = Group.objects.get_or_create(name=role.name)
+            # Assign user to the correct group
+            group_name = role.get_name_display()
+            group, _ = Group.objects.get_or_create(name=group_name)
             user.groups.add(group)
 
-            # Assign staff-specific permissions if role is Staff
-            if role.id == Role.STAFF:
-                staff_permissions = [
-                    'create_ticket',
-                    'view_ticket',
-                    'comment_ticket',
-                    'close_ticket',
-                    'view_org_tickets'
-                ]
-                for perm_codename in staff_permissions:
-                    try:
-                        perm = Permission.objects.get(codename=perm_codename)
-                        user.user_permissions.add(perm)
-                    except Permission.DoesNotExist:
-                        continue
-
-            messages.success(request, f"Successfully created user: {user_name} with role {role.name}")
+            messages.success(request, f"Successfully created user: {user_name} with role {group_name}")
             return redirect('user_list')
 
+        except ValueError as e:
+            messages.error(request, str(e))
         except Role.DoesNotExist:
             messages.error(request, "Invalid role selected.")
-            return redirect("add_user")
+        except Exception as e:
+            messages.error(request, f"Error creating user: {str(e)}")
 
-    roles = Role.objects.all()
-    return render(request, "admin/add_user.html", {
-        "roles": roles,
-        "staff_role_id": Role.STAFF  # Pass staff role ID to template
-    })
+        return render(request, "admin/add_user.html", {"role_choices": role_choices})
+
+    # For GET request
+    return render(request, "admin/add_user.html", {"role_choices": role_choices})
 
 @permission_required(['tracker.can_assign_permissions'])
 def assign_permissions(request, user_id=None):
@@ -1198,8 +1206,12 @@ def email_support_team(request):
 
 @role_required([Role.ADMIN])
 def user_list(request):
+    """Display list of users"""
     users = UserDetail.objects.all().order_by('user_name')
-    return render(request, 'admin/user_list.html', {'users': users})
+    return render(request, 'admin/user_list.html', {
+        'users': users,
+        'dashboard_url': reverse('dashboard')  # Add dashboard URL to context
+    })
 
 @role_required([Role.ADMIN])
 def search_users(request):
@@ -1275,33 +1287,65 @@ def admin_dashboard(request):
     }
     return render(request, 'dashboards/admin_dashboard.html', context)
 
-@permission_required('tracker.manage_users', raise_exception=True)  # 🔹 Fix app name
+@login_required
 def add_user(request):
-    """Add a new user"""
+    """Admin can add users with role selection"""
+    # Get role choices for the template
+    role_choices = Role.ROLE_CHOICES
+
     if request.method == "POST":
-        email = request.POST.get("email")
-        user_name = request.POST.get("user_name")
-        password = request.POST.get("password")
-        role_id = request.POST.get("role")  # ✅ Get role ID
-        role = get_object_or_404(Role, id=role_id)  # ✅ Search by ID
+        email = request.POST.get('email')
+        user_name = request.POST.get('user_name')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
+        role_id = request.POST.get('role')
 
+        # Validate inputs
+        if not all([email, user_name, password, role_id]):
+            messages.error(request, "All fields are required!")
+            return render(request, "admin/add_user.html", {"role_choices": role_choices})
 
-        user = UserDetail.objects.create_user(
-            user_id=email,
-            user_name=user_name,
-            password=password,
-            role=role
-        )
+        if password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+            return render(request, "admin/add_user.html", {"role_choices": role_choices})
 
-        assign_role(user, role_id)  # ✅ Ensure `assign_role` is defined somewhere
+        try:
+            # Convert and validate role_id
+            role_id = int(role_id)
+            if role_id not in dict(Role.ROLE_CHOICES):
+                raise ValueError("Invalid role selected")
 
-        messages.success(request, f"Successfully created user: {user_name}")
-        return redirect('user_list')
+            # Get role object
+            role = Role.objects.get(id=role_id)
 
-    roles = Role.objects.all()
-    return render(request, 'admin/add_user.html', {'roles': roles})
+            # Create user
+            user = UserDetail.objects.create_user(
+                user_id=email,
+                user_name=user_name,
+                password=password,
+                role=role,
+                is_active=True
+            )
 
+            # Assign user to the correct group
+            group_name = role.get_name_display()
+            group, _ = Group.objects.get_or_create(name=group_name)
+            user.groups.add(group)
 
+            messages.success(request, f"Successfully created user: {user_name} with role {group_name}")
+            return redirect('user_list')
+
+        except ValueError as e:
+            messages.error(request, str(e))
+        except Role.DoesNotExist:
+            messages.error(request, "Invalid role selected.")
+        except Exception as e:
+            messages.error(request, f"Error creating user: {str(e)}")
+
+        return render(request, "admin/add_user.html", {"role_choices": role_choices})
+
+    # For GET request
+    return render(request, "admin/add_user.html", {"role_choices": role_choices})
 
 def group_list(request):
     """Display a list of groups"""
@@ -1417,23 +1461,23 @@ def assign_permissions(request):
     users = UserDetail.objects.all().order_by('user_name')
     return render(request, 'admin/permission_list.html', {'users': users})
 
-@permission_required(['tracker.can_assign_permissions'])
-def assign_user_permissions(request, user_id):
-    """Assign permissions to specific user"""
-    user = get_object_or_404(UserDetail, row_id=user_id)
-    permissions = Permission.objects.all().order_by('content_type', 'codename')
+# @permission_required(['tracker.can_assign_permissions'])
+# def assign_user_permissions(request, user_id):
+#     """Assign permissions to specific user"""
+#     user = get_object_or_404(UserDetail, row_id=user_id)
+#     permissions = Permission.objects.all().order_by('content_type', 'codename')
     
-    if request.method == 'POST':
-        selected_permissions = request.POST.getlist('permissions')
-        user.user_permissions.clear()
-        user.user_permissions.add(*selected_permissions)
-        messages.success(request, f'Permissions updated for {user.user_name}')
-        return redirect('assign_permissions')
+#     if request.method == 'POST':
+#         selected_permissions = request.POST.getlist('permissions')
+#         user.user_permissions.clear()
+#         user.user_permissions.add(*selected_permissions)
+#         messages.success(request, f'Permissions updated for {user.user_name}')
+#         return redirect('assign_permissions')
     
-    return render(request, 'admin/assign_permissions.html', {
-        'user': user,
-        'permissions': permissions
-    })
+#     return render(request, 'admin/assign_permissions.html', {
+#         'user': user,
+#         'permissions': permissions
+#     })
 
 @permission_required(['tracker.can_assign_team_view'])
 def assign_team_view(request):
@@ -1468,7 +1512,7 @@ def team_view_list(request):
 @permission_required(['tracker.can_assign_team_view'])
 def assign_team_view(request, team_id=None):
     """Assign team view permissions to users"""
-    if team_id is None:
+    if (team_id):
         # Show list of teams if no team_id is provided
         teams = Group.objects.all().order_by('name')
         return render(request, 'admin/team_list.html', {'teams': teams})
@@ -1662,4 +1706,16 @@ def assign_user_permissions(request, user_id):
         'current_permissions': user.user_permissions.all()
     }
     return render(request, 'admin/assign_permissions.html', context)
+
+def get_dashboard_url(role_id):
+    """Return the appropriate dashboard URL based on role"""
+    dashboard_urls = {
+        Role.ADMIN: 'admin_dashboard',
+        Role.MANAGER: 'manager_dashboard',
+        Role.CLIENT: 'client_dashboard',
+        Role.EMPLOYEE: 'employee_dashboard',
+        Role.USER: 'user_dashboard',
+        Role.STAFF: 'staff_dashboard'
+    }
+    return dashboard_urls.get(role_id, 'user_dashboard')
 

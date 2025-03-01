@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from tracker.models import UserDetail, Role
 from django.db import transaction, connection
 from django.core.management import call_command
+from django.contrib.auth.models import Group
 
 class Command(BaseCommand):
     help = 'Creates an admin user and role if they don\'t exist'
@@ -54,6 +55,12 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.SUCCESS(f'Created admin user: {email}'))
                 else:
                     self.stdout.write(self.style.WARNING(f'Admin user already exists: {email}'))
+
+                # Create Admin group if it doesn't exist
+                admin_group, created = Group.objects.get_or_create(name='Admin')
+                
+                # Add user to Admin group
+                admin_user.groups.add(admin_group)
 
             # Re-enable foreign key checks
             with connection.cursor() as cursor:

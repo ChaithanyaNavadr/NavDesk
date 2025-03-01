@@ -45,8 +45,21 @@ class Role(models.Model):
     id = models.PositiveSmallIntegerField(choices=ROLE_CHOICES, primary_key=True)
     name = models.CharField(max_length=50)
 
+    class Meta:
+        ordering = ['id']
+        verbose_name_plural = 'Roles'
+
     def __str__(self):
         return self.get_id_display()
+
+    @classmethod
+    def create_missing_roles(cls):
+        """Create any missing default roles"""
+        existing_roles = set(cls.objects.values_list('id', flat=True))
+        for role_id, role_name in cls.ROLE_CHOICES:
+            if role_id not in existing_roles:
+                cls.objects.create(id=role_id, name=role_name)
+                print(f"Created role: {role_name}")
 
     def get_name_display(self):
         return dict(self.ROLE_CHOICES)[self.id]
@@ -69,6 +82,14 @@ class Role(models.Model):
             'Client': ['view_client_dashboard'],
             'Employee': ['view_employee_dashboard'],
             'User': ['view_user_dashboard'],
+            'Staff': [
+                'view_staff_dashboard',
+                'view_ticket',
+                'create_ticket',
+                'comment_ticket',
+                'close_ticket',
+                'view_org_tickets'
+            ],
         }   
 
         content_type = ContentType.objects.get_for_model(Role)  # Assigning to Role Model
@@ -88,20 +109,18 @@ class Role(models.Model):
 
     class Meta:
         permissions = [
-            ("can_add_users", "Can add new users"),
-            ("can_assign_permissions", "Can assign permissions to users"),
-            ("can_manage_groups", "Can create and manage groups"),
-            ("can_transfer_tickets", "Can transfer tickets to other users"),
-            ("can_manage_priorities", "Can manage ticket priorities"),
-            ("can_email_support", "Can email support team"),
-            ("can_assign_team_view", "Can assign team view permissions"),
-            ("view_team_tickets", "Can view team tickets"),
-            ("create_ticket", "Can create tickets"),
-            ("view_ticket", "Can view tickets"),
-            ("comment_ticket", "Can comment on tickets"),
-            ("close_ticket", "Can close assigned tickets"),
+            ("view_staff_dashboard", "Can view staff dashboard"),
+            ("create_ticket", "Can create ticket"),
+            ("view_ticket", "Can view ticket"),
+            ("comment_ticket", "Can comment on ticket"),
+            ("close_ticket", "Can close ticket"),
             ("view_org_tickets", "Can view organization tickets"),
         ]
+
+    def get_dashboard_permission(self):
+        """Get the corresponding dashboard permission for this role"""
+        role_name = self.get_name_display().lower()
+        return f'view_{role_name}_dashboard'
 
 
 # ✅ User Model
@@ -116,8 +135,7 @@ class UserDetail(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
-    department = models.CharField(max_length=100, null=True, blank=True)
-
+    
     objects = UserManager()
 
     USERNAME_FIELD = "user_id"
@@ -151,6 +169,14 @@ class UserDetail(AbstractBaseUser, PermissionsMixin):
         related_query_name='userdetail'
     )
 
+class Priority(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = "Priorities"
 
 # ✅ Ticket Model
 class Ticket(models.Model):
@@ -162,13 +188,6 @@ class Ticket(models.Model):
         (5, 'Closed'),
     ]
 
-    PRIORITY_CHOICES = [
-        ('Low', 'Low'),
-        ('Medium', 'Medium'),
-        ('High', 'High'),
-        ('Critical', 'Critical'),
-    ]
-
     id = models.AutoField(primary_key=True)
     subject = models.CharField(max_length=200)
     description = models.TextField()
@@ -177,38 +196,14 @@ class Ticket(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=1)
-    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='Medium')
-    brand = models.CharField(max_length=100, blank=True, null=True)  # ✅ Add this field
-
-    
+    # Change priority field to ForeignKey
+    priority = models.ForeignKey(Priority, on_delete=models.SET_NULL, null=True)
+    brand = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
         return f"{self.id} - {self.subject}"
 
 
-class Priority(models.Model):
-    name = models.CharField(max_length=255, unique=True)  # ✅ Fix field name
-
-    def __str__(self):
-        return self.name
-
-# class Priority(models.Model):
-#     LOW = "Low"
-#     MEDIUM = "Medium"
-#     HIGH = "High"
-#     CRITICAL = "Critical"
-
-#     PRIORITY_CHOICES = [
-#         (LOW, "Low"),
-#         (MEDIUM, "Medium"),
-#         (HIGH, "High"),
-#         (CRITICAL, "Critical"),
-#     ]
-
-#     name = models.CharField(max_length=20, choices=PRIORITY_CHOICES, unique=True)
-
-#     def __str__(self):
-#         return self.name
 
 
 # ✅ Ticket Comments Model

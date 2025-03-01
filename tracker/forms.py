@@ -1,38 +1,30 @@
 from django import forms
 from .models import Ticket, Priority, UserDetail
 
-class StaffTicketForm(forms.ModelForm):
-    priority = forms.ModelChoiceField(
-        queryset=Priority.objects.all(),
-        empty_label="Select Priority",
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-            'required': True
-        })
-    )
-    
-    assigned_to = forms.ModelChoiceField(
-        queryset=UserDetail.objects.filter(is_active=True),
-        empty_label="Select User",
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-            'required': True
-        })
-    )
-
+class TicketForm(forms.ModelForm):
     class Meta:
         model = Ticket
-        fields = ['subject', 'description', 'priority', 'assigned_to']
-        widgets = {
-            'subject': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter ticket subject',
-                'required': True
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 4,
-                'placeholder': 'Enter ticket description',
-                'required': True
-            })
-        }
+        fields = ['subject', 'description', 'priority', 'status', 'assigned_to', 'brand']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Get priorities from the Priority table
+        self.fields['priority'].queryset = Priority.objects.all()
+
+class StaffTicketForm(forms.ModelForm):
+    class Meta:
+        model = Ticket
+        fields = ['subject', 'description', 'priority', 'assigned_to', 'status']
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make priority a required field
+        self.fields['priority'].required = True
+        # Get priorities from the Priority model
+        self.fields['priority'].queryset = Priority.objects.all()
+        # Add Bootstrap classes
+        for field in self.fields:
+            self.fields[field].widget.attrs['class'] = 'form-control'
+        # Add placeholder text
+        self.fields['subject'].widget.attrs['placeholder'] = 'Enter ticket subject'
+        self.fields['description'].widget.attrs['placeholder'] = 'Enter ticket description'

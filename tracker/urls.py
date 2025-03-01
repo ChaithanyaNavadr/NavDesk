@@ -7,7 +7,7 @@ urlpatterns = [
     # Authentication URLs
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
-    path('dashboard/', views.dashboard, name='dashboard'),
+    path('dashboard/', views.role_based_dashboard, name='dashboard'),  # Default dashboard
     path('forgot-password/', views.forgot_password, name='forgot_password'),
     path('reset-password/', views.reset_password, name='reset_password'),
     path('change-password/', views.change_password, name='change_password'),
@@ -33,8 +33,10 @@ urlpatterns = [
     # Super User URLs
     path('admin/', views.TicketSuperUserView.as_view(), name='superuser_home'),
     path('admin/new-ticket/', views.AdminNewTicketView.as_view(), name='admin_new_ticket'),
+    path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('admin/dashboard/<int:id>/<str:filtertype>/<str:days>/<str:vtype>/<str:ticketno>/', 
-         views.TicketDashboardView.as_view(), name='admin_dashboard'),
+         views.admin_dashboard, 
+         name='admin_dashboard_filtered'),
     path('admin/ticket/<int:ticketid>/', views.ViewTicketView.as_view(), name='admin_view_ticket'),
     path('admin/ticket-data/', views.TicketDataView.as_view(), name='admin_ticket_data'),
     path('admin/save-ticket/', views.SaveTicketView.as_view(), name='admin_save_ticket'),
@@ -46,13 +48,8 @@ urlpatterns = [
     path('template/ticket/rows/', views.ticket_rows_template, name='ticket_rows_template'),
     path('template/reset-password/', views.reset_password_template, name='reset_password_template'),
     
-    # Role-based dashboard URLs
-    path('dashboard/', views.role_based_dashboard, name='role_based_dashboard'),
-    path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
-    path('manager/dashboard/', views.manager_dashboard, name='manager_dashboard'),
-    path('client/dashboard/', views.client_dashboard, name='client_dashboard'),
-    path('user/dashboard/', views.user_dashboard, name='user_dashboard'),
-    path('employee/dashboard/', views.employee_dashboard, name='employee_dashboard'),
+    # Role-based dashboard URL
+    path('dashboard/<str:role>/', views.role_based_dashboard, name='role_based_dashboard'),
 
     # Staff URLs
     path('staff/dashboard/', views.staff_dashboard, name='staff_dashboard'),

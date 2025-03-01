@@ -1,58 +1,62 @@
 {% extends "admin/base.html" %}
 
 {% block content %}
+<style>
+    .form-control {
+        color: #000 !important;
+    }
+    select.form-control option {
+        color: #000;
+        background-color: #fff;
+    }
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+    .btn-submit {
+        margin-top: 1rem;
+    }
+</style>
+
 <div class="container">
-    <h2>Add New User</h2>
+    <h2 class="mb-4">Add User</h2>
     <form method="POST">
         {% csrf_token %}
+        
         <div class="form-group">
-            <label for="email">Email</label>
+            <label for="email">Email/User ID:</label>
             <input type="email" class="form-control" id="email" name="email" required>
         </div>
-        
+
         <div class="form-group">
-            <label for="user_name">Username</label>
+            <label for="user_name">User Name:</label>
             <input type="text" class="form-control" id="user_name" name="user_name" required>
         </div>
-        
+
         <div class="form-group">
-            <label for="password">Password</label>
+            <label for="password">Password:</label>
             <input type="password" class="form-control" id="password" name="password" required>
         </div>
-        
+
         <div class="form-group">
-            <label for="confirm_password">Confirm Password</label>
+            <label for="confirm_password">Confirm Password:</label>
             <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
         </div>
-        
+
         <div class="form-group">
-            <label for="role">Role</label>
-            <select class="form-control" id="role" name="role" required onchange="toggleDepartment(this.value)">
-                <option value="">Select Role</option>
-                {% for role in roles %}
-                <option value="{{ role.id }}">{{ role.name }}</option>
+            <label for="role">Select Role:</label>
+            <select class="form-control text-dark" name="role" id="role" required>
+                <option value="">Select a role</option>
+                {% for role_id, role_name in role_choices %}
+                    <option value="{{ role_id }}">{{ role_name }}</option>
                 {% endfor %}
             </select>
         </div>
-        
-        <div class="form-group" id="department_group" style="display: none;">
-            <label for="department">Department</label>
-            <input type="text" class="form-control" id="department" name="department">
-        </div>
-        
-        <button type="submit" class="btn btn-primary mt-3">Add User</button>
+
+        <button type="submit" class="btn btn-primary btn-submit">Create User</button>
     </form>
 </div>
-
-<script>
-function toggleDepartment(roleId) {
-    const departmentGroup = document.getElementById('department_group');
-    // Show department field for Employee and Staff roles
-    if (roleId == '{{ Role.EMPLOYEE }}' || roleId == '{{ Role.STAFF }}') {
-        departmentGroup.style.display = 'block';
-    } else {
-        departmentGroup.style.display = 'none';
-    }
-}
-</script>
 {% endblock %}
