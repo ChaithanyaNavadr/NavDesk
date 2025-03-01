@@ -79,7 +79,6 @@ urlpatterns = [
     # Permissions URLs
     path('admin/permissions/', views.assign_permissions, name='permission_list'),
     path('admin/permissions/<int:user_id>/', views.assign_user_permissions, name='assign_user_permissions'),
-    path('admin/team-view/', views.assign_team_view, name='assign_team_view'),
     path('admin/team-view/<int:team_id>/', views.assign_team_view_permissions, name='assign_team_view_permissions'),
 
     # Settings URLs
@@ -88,8 +87,9 @@ urlpatterns = [
 
     # Team Management URLs
     path('admin/teams/', views.team_list, name='team_list'),
-    path('admin/team-view/', views.team_view_list, name='team_view_list'),
-    path('admin/team/<int:team_id>/manage/', views.manage_team_view, name='manage_team_view'),
+    path('admin/teams/view/', views.team_view_list, name='team_view_list'),
+    path('admin/teams/<int:team_id>/manage/', views.manage_team_view, name='manage_team_view'),
+    path('admin/teams/<int:team_id>/remove/<int:user_id>/', views.remove_team_member, name='remove_team_member'),
     
     # Permission Management URLs
     path('admin/permissions/', views.permission_list, name='permission_list'),

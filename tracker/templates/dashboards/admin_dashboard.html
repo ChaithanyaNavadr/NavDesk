@@ -207,66 +207,68 @@
             </div>
 
             <!-- Recent Tickets -->
-            <div class="card">
+            <div class="recent-tickets card">
                 <div class="card-header bg-light">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Recent Tickets</h5>
-                        <a href="{% url 'all_tickets' %}" class="btn btn-sm btn-primary">
-                            <i class="fas fa-external-link-alt"></i> View All
-                        </a>
+                        <h5 class="mb-0"><i class="fas fa-ticket-alt me-2"></i>All Tickets</h5>
+                        <span class="badge bg-primary">{{ recent_tickets.count }} Total</span>
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Subject</th>
-                                    <th>Created By</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for ticket in recent_tickets %}
-                                <tr>
-                                    <td>#{{ ticket.id }}</td>
-                                    <td>{{ ticket.subject }}</td>
-                                    <td>
-                                        <img src="{{ ticket.created_by.avatar_url|default:'default_avatar.png' }}" 
-                                             alt="User" class="avatar-sm rounded-circle me-2">
-                                        {{ ticket.created_by.user_name }}
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-{{ ticket.status_color }}">
-                                            {{ ticket.get_status_display }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <a href="{% url 'view_ticket' ticket.id %}" 
-                                               class="btn btn-sm btn-outline-primary">
+                    {% if recent_tickets %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Subject</th>
+                                        <th>Created By</th>
+                                        <th>Assigned To</th>
+                                        <th>Priority</th>
+                                        <th>Status</th>
+                                        <th>Created At</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ticket in recent_tickets %}
+                                    <tr>
+                                        <td>{{ ticket.id }}</td>
+                                        <td>{{ ticket.subject }}</td>
+                                        <td>
+                                            <span class="badge bg-info">
+                                                {{ ticket.created_by.user_name }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                {{ ticket.assigned_to.user_name|default:"Unassigned" }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ ticket.priority.name|lower }}">
+                                                {{ ticket.priority.name|default:"None" }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ ticket.get_status_display|lower }}">
+                                                {{ ticket.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ ticket.created_at|date:"Y-m-d H:i" }}</td>
+                                        <td>
+                                            <a href="{% url 'admin_view_ticket' ticket.id %}" class="btn btn-sm btn-info">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="{% url 'transfer_ticket' ticket.id %}" 
-                                               class="btn btn-sm btn-outline-warning">
-                                                <i class="fas fa-exchange-alt"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted">
-                                        <i class="fas fa-inbox fa-2x mb-2"></i>
-                                        <p>No recent tickets found</p>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No tickets found.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>

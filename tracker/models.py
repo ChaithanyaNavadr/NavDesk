@@ -180,12 +180,14 @@ class Priority(models.Model):
 
 # ✅ Ticket Model
 class Ticket(models.Model):
+    STATUS_ACTIVE = 1
+    STATUS_CLOSED = 2
+    STATUS_PENDING = 3
+    
     STATUS_CHOICES = [
-        (1, 'New'),
-        (2, 'In Progress'),
-        (3, 'Pending'),
-        (4, 'Resolved'),
-        (5, 'Closed'),
+        (STATUS_ACTIVE, 'Active'),
+        (STATUS_CLOSED, 'Closed'),
+        (STATUS_PENDING, 'Pending'),
     ]
 
     id = models.AutoField(primary_key=True)
@@ -195,7 +197,10 @@ class Ticket(models.Model):
     assigned_to = models.ForeignKey(UserDetail, on_delete=models.SET_NULL, null=True, related_name='assigned_tickets')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    status = models.IntegerField(choices=STATUS_CHOICES, default=1)
+    status = models.PositiveSmallIntegerField(
+        choices=STATUS_CHOICES,
+        default=STATUS_ACTIVE
+    )
     # Change priority field to ForeignKey
     priority = models.ForeignKey(Priority, on_delete=models.SET_NULL, null=True)
     brand = models.CharField(max_length=100, blank=True, null=True)
@@ -203,8 +208,11 @@ class Ticket(models.Model):
     def __str__(self):
         return f"{self.id} - {self.subject}"
 
-
-
+    class Meta:
+        ordering = ['-created_at']  # Default ordering by creation date, newest first
+        indexes = [
+            models.Index(fields=['-created_at']),  # Add index for better performance
+        ]
 
 # ✅ Ticket Comments Model
 class TicketComment(models.Model):
