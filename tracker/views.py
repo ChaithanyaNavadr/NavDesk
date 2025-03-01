@@ -41,6 +41,8 @@ from .models import (
 )
 from .utils import generate_password_reset_token, verify_password_reset_token
 from .forms import StaffTicketForm  # Add this import
+from django.utils import timezone
+
 
 User = get_user_model()
 
@@ -237,66 +239,152 @@ def staff_create_ticket(request):
     }
     return render(request, 'staff/create_ticket.html', context)
 
-@permission_required(['tracker.view_ticket', 'tracker.view_org_tickets'])
+@role_required([Role.STAFF])
 def staff_view_ticket(request, ticket_id):
-    """Staff can view tickets"""
-    ticket = get_object_or_404(
-        Ticket,
-        Q(created_by=request.user) |
-        Q(assigned_to=request.user) |
-        Q(created_by__department=request.user.department),
-        id=ticket_id
-    )
+    """View ticket details"""
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    
+    # Check if user has permission to view this ticket
+    if ticket.created_by != request.user and ticket.assigned_to != request.user:
+        messages.error(request, "You don't have permission to view this ticket.")
+        return redirect('staff_dashboard')
+    
+    comments = TicketComment.objects.filter(ticket=ticket).order_by('-created_at')
+    attachments = TicketAttachment.objects.filter(ticket=ticket)
     
     context = {
         'ticket': ticket,
-        'comments': ticket.comments.all().order_by('-created_at'),
-        'can_close': ticket.assigned_to == request.user,
-        'can_comment': ticket.assigned_to == request.user or ticket.created_by == request.user
+        'comments': comments,
+        'attachments': attachments
     }
     return render(request, 'staff/view_ticket.html', context)
 
-@permission_required(['tracker.comment_ticket'])
+@role_required([Role.STAFF])
 def staff_add_comment(request, ticket_id):
-    """Staff can comment on assigned or created tickets"""
-    ticket = get_object_or_404(
-        Ticket,
-        Q(assigned_to=request.user) | Q(created_by=request.user),
-        id=ticket_id
-    )
+    """Add comment to ticket"""
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    
+    # Check if user has permission to comment
+    if ticket.created_by != request.user and ticket.assigned_to != request.user:
+        messages.error(request, "You don't have permission to comment on this ticket.")
+        return redirect('staff_dashboard')
     
     if request.method == "POST":
-        comment = request.POST.get('comment')
-        if comment:
+        comment_text = request.POST.get('comment')
+        if comment_text:
             TicketComment.objects.create(
                 ticket=ticket,
                 user=request.user,
-                comment=comment
+                comment=comment_text
             )
-            messages.success(request, "Comment added successfully")
+            messages.success(request, "Comment added successfully.")
+            return redirect('staff_view_ticket', ticket_id=ticket_id)
         else:
-            messages.error(request, "Comment cannot be empty")
-            
+            messages.error(request, "Comment cannot be empty.")
+    
     return redirect('staff_view_ticket', ticket_id=ticket_id)
 
-@permission_required(['tracker.close_ticket'])
+@role_required([Role.STAFF])
 def staff_close_ticket(request, ticket_id):
-    """Staff can close assigned tickets"""
-    ticket = get_object_or_404(Ticket, assigned_to=request.user, id=ticket_id)
+    """Close a ticket"""
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    
+    # Check if user has permission to close
+    if ticket.created_by != request.user and ticket.assigned_to != request.user:
+        messages.error(request, "You don't have permission to close this ticket.")
+        return redirect('staff_dashboard')
+    
+    # Check if ticket is already closed
+    if ticket.status == Ticket.STATUS_CLOSED:
+        messages.warning(request, f"Ticket #{ticket.id} is already closed.")
+        return redirect('staff_view_ticket', ticket_id=ticket.id)
     
     if request.method == "POST":
-        resolution = request.POST.get('resolution')
-        if resolution:
-            ticket.status = 'CLOSED'
-            ticket.resolution = resolution
+        close_comment = request.POST.get('close_comment')
+        if close_comment:
+            # Change status to CLOSED
+            ticket.status = Ticket.STATUS_CLOSED
             ticket.closed_at = timezone.now()
             ticket.closed_by = request.user
             ticket.save()
-            messages.success(request, f"Ticket #{ticket.id} closed successfully")
-        else:
-            messages.error(request, "Please provide resolution details")
             
-    return redirect('staff_view_ticket', ticket_id=ticket_id)
+            # Create closing comment
+            TicketComment.objects.create(
+                ticket=ticket,
+                user=request.user,
+                comment=f"[Ticket Closed] {close_comment}"
+            )
+            
+            messages.success(request, f"Ticket #{ticket.id} has been closed successfully.")
+            return redirect('staff_view_ticket', ticket_id=ticket.id)
+        else:
+            messages.error(request, "Please provide a closing comment.")
+    
+    context = {
+        'ticket': ticket,
+    }
+    return render(request, 'staff/close_ticket.html', context)
+
+# @permission_required(['tracker.view_ticket', 'tracker.view_org_tickets'])
+# def staff_view_ticket(request, ticket_id):
+#     """Staff can view tickets"""
+#     ticket = get_object_or_404(
+#         Ticket,
+#         Q(created_by=request.user) |
+#         Q(assigned_to=request.user) |
+#         Q(created_by__department=request.user.department),
+#         id=ticket_id
+#     )
+    
+#     context = {
+#         'ticket': ticket,
+#         'comments': ticket.comments.all().order_by('-created_at'),
+#         'can_close': ticket.assigned_to == request.user,
+#         'can_comment': ticket.assigned_to == request.user or ticket.created_by == request.user
+#     }
+#     return render(request, 'staff/view_ticket.html', context)
+
+# @permission_required(['tracker.comment_ticket'])
+# def staff_add_comment(request, ticket_id):
+#     """Staff can comment on assigned or created tickets"""
+#     ticket = get_object_or_404(
+#         Ticket,
+#         Q(assigned_to=request.user) | Q(created_by=request.user),
+#         id=ticket_id
+#     )
+    
+#     if request.method == "POST":
+#         comment = request.POST.get('comment')
+#         if comment:
+#             TicketComment.objects.create(
+#                 ticket=ticket,
+#                 user=request.user,
+#                 comment=comment
+#             )
+#             messages.success(request, "Comment added successfully")
+#         else:
+#             messages.error(request, "Comment cannot be empty")
+            
+#     return redirect('staff_view_ticket', ticket_id=ticket_id)
+
+# @permission_required(['tracker.close_ticket'])
+# def staff_close_ticket(request, ticket_id):
+#     """Staff can close assigned tickets"""
+#     ticket = get_object_or_404(Ticket, assigned_to=request.user, id=ticket_id)
+    
+#     if request.method == "POST":
+#         resolution = request.POST.get('resolution')
+#         if resolution:
+#             ticket.status = 'CLOSED'
+#             ticket.resolution = resolution
+#             ticket.closed_at = timezone.now()
+#             ticket.closed_by = request.user
+#             ticket.save()
+#             messages.success(request, f"Ticket #{ticket.id} closed successfully")
+#         else:
+#             messages.error(request, "Please provide resolution details")
+            
+#     return redirect('staff_view_ticket', ticket_id=ticket_id)
 
 # Helper functions for metrics
 def calculate_team_performance(department):

@@ -201,6 +201,14 @@ class Ticket(models.Model):
         choices=STATUS_CHOICES,
         default=STATUS_ACTIVE
     )
+    closed_at = models.DateTimeField(null=True, blank=True)
+    closed_by = models.ForeignKey(
+        UserDetail,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='closed_tickets'
+    )
     # Change priority field to ForeignKey
     priority = models.ForeignKey(Priority, on_delete=models.SET_NULL, null=True)
     brand = models.CharField(max_length=100, blank=True, null=True)

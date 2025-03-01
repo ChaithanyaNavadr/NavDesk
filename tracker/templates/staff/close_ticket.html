@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h4>Close Ticket #{{ ticket.id }}: {{ ticket.subject }}</h4>
+        </div>
+        <div class="card-body">
+            <div class="ticket-summary mb-4">
+                <p><strong>Created by:</strong> {{ ticket.created_by.user_name }}</p>
+                <p><strong>Created on:</strong> {{ ticket.created_at|date:"Y-m-d H:i" }}</p>
+                <p><strong>Status:</strong> {{ ticket.get_status_display }}</p>
+                <p><strong>Priority:</strong> {{ ticket.priority.name }}</p>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="close_comment">Closing Comment:</label>
+                    <textarea id="close_comment" name="close_comment" class="form-control" rows="3" required></textarea>
+                    <small class="form-text text-muted">Please provide a reason for closing this ticket.</small>
+                </div>
+                
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-times-circle"></i> Close Ticket
+                    </button>
+                    <a href="{% url 'staff_view_ticket' ticket.id %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Ticket
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ticket-summary {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.25rem;
+    }
+    .ticket-summary p:last-child {
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}
