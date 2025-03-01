@@ -1285,9 +1285,17 @@ def admin_dashboard(request):
     return render(request, 'dashboards/admin_dashboard.html', context)
 
 
+@permission_required('auth.view_group')
 def group_list(request):
-    """Display a list of groups"""
+    """View list of all groups"""
+    groups = Group.objects.all().order_by('name')
+    context = {
+        'groups': groups,
+        'total_groups': groups.count()
+    }
+    return render(request, 'admin/group_list.html', context)
 
+@permission_required(['tracker.can_assign_permissions'])
 def assign_user_permissions(request, user_id):
     """Assign permissions to specific user"""
     user = get_object_or_404(UserDetail, row_id=user_id)
@@ -1296,15 +1304,18 @@ def assign_user_permissions(request, user_id):
     if request.method == 'POST':
         selected_permissions = request.POST.getlist('permissions')
         user.user_permissions.clear()
-        user.user_permissions.add(*selected_permissions)
+        if selected_permissions:
+            permissions = Permission.objects.filter(id__in=selected_permissions)
+            user.user_permissions.add(*permissions)
+        
         messages.success(request, f'Permissions updated for {user.user_name}')
-        return redirect('assign_permissions')
+        return redirect('permission_list')  # Changed from assign_permissions to permission_list
     
     return render(request, 'admin/assign_permissions.html', {
         'user': user,
-        'permissions': permissions
+        'permissions': permissions,
+        'current_permissions': user.user_permissions.all()
     })
-
 
 @permission_required('auth.change_group', raise_exception=True)
 def edit_group(request, group_id):

@@ -1,60 +1,43 @@
 {% extends "admin/base.html" %}
 
 {% block content %}
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>User Permissions Management</h2>
-        <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Dashboard
-        </a>
-    </div>
-
-    <div class="card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in users %}
-                        <tr>
-                            <td>{{ user.user_name }}</td>
-                            <td>{{ user.user_id }}</td>
-                            <td>{{ user.role.name }}</td>
-                            <td>
-                                <a href="{% url 'assign_user_permissions' user.row_id %}" 
-                                   class="btn btn-primary btn-sm">
-                                    <i class="fas fa-key"></i> Manage Permissions
-                                </a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" class="text-center">No users found.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<div class="container mt-4">
+    <h2>User Permissions</h2>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
             </div>
-        </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.user_name }}</td>
+                    <td>{{ user.user_id }}</td>
+                    <td>{{ user.role.name }}</td>
+                    <td>
+                        <a href="{% url 'assign_user_permissions' user.row_id %}" 
+                           class="btn btn-sm btn-primary">
+                            Manage Permissions
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
-
-{% block extra_css %}
-<style>
-    .table th {
-        background-color: #f8f9fa;
-    }
-    .btn-sm {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-    }
-</style>
-{% endblock %}
 {% endblock %}
