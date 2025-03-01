@@ -101,15 +101,22 @@ def admin_dashboard(request):
     context = {
         'total_users': UserDetail.objects.count(),
         'total_teams': Group.objects.count(),
-        'total_tickets': Ticket.objects.filter(status=1).count(),  # Use numeric status
-        'total_priorities': Priority.objects.count(),
-        'user_metrics': get_user_metrics(),
-        'ticket_metrics': get_ticket_metrics(),
+        'total_tickets': Ticket.objects.count(),
         'recent_tickets': Ticket.objects.select_related(
-            'created_by', 
-            'assigned_to', 
+            'created_by',
+            'assigned_to',
             'priority'
-        ).order_by('-created_at')[:10]  # Get last 10 tickets with related data
+        ).all().order_by('-created_at'),
+        'staff_tickets': Ticket.objects.select_related(
+            'created_by',
+            'assigned_to',
+            'priority'
+        ).filter(created_by__role__name='STAFF').order_by('-created_at'),
+        'user_tickets': Ticket.objects.select_related(
+            'created_by',
+            'assigned_to',
+            'priority'
+        ).filter(created_by__role__name='USER').order_by('-created_at')
     }
     return render(request, 'dashboards/admin_dashboard.html', context)
 
@@ -170,9 +177,22 @@ def user_dashboard(request):
 def staff_dashboard(request):
     """Staff Dashboard View"""
     context = {
-        'assigned_tickets': Ticket.objects.filter(assigned_to=request.user),
-        'created_tickets': Ticket.objects.filter(created_by=request.user),
-        'recent_comments': TicketComment.objects.filter(
+        'assigned_tickets': Ticket.objects.select_related(
+            'created_by', 
+            'assigned_to',
+            'priority'
+        ).filter(assigned_to=request.user).order_by('-created_at'),
+        
+        'created_tickets': Ticket.objects.select_related(
+            'created_by', 
+            'assigned_to',
+            'priority'
+        ).filter(created_by=request.user).order_by('-created_at'),
+        
+        'recent_comments': TicketComment.objects.select_related(
+            'ticket', 
+            'user'
+        ).filter(
             Q(ticket__assigned_to=request.user) |
             Q(ticket__created_by=request.user)
         ).order_by('-created_at')[:5]
