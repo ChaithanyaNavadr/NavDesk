@@ -23,139 +23,114 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Recent Activity Section -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Ticket #</th>
+                                    <th>Subject</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ticket in created_tickets|slice:":5" %}
+                                <tr>
+                                    <td>{{ ticket.id }}</td>
+                                    <td>{{ ticket.subject }}</td>
+                                    <td>
+                                        <span class="badge {% if ticket.status == 2 %}bg-danger{% else %}bg-success{% endif %}">
+                                            {{ ticket.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ ticket.priority.name|lower }}">
+                                            {{ ticket.priority.name }}
+                                        </span>
+                                    </td>
+                                    <td>{{ ticket.created_at|date:"Y-m-d H:i" }}</td>
+                                    <td>
+                                        <a href="{% url 'view_ticket' ticket.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No tickets created yet</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
         <div class="col-md-4">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Recent Activities</h5>
-                    <h2>{{ recent_activity.count }}</h2>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tickets Section -->
-    <div class="row">
-        <!-- Assigned Tickets -->
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Assigned Tickets</h5>
-                    <a href="{% url 'all_tickets' %}" class="btn btn-sm btn-primary">View All</a>
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Quick Actions</h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Subject</th>
-                                    <th>Status</th>
-                                    <th>Priority</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for ticket in assigned_tickets %}
-                                <tr>
-                                    <td>{{ ticket.id }}</td>
-                                    <td>
-                                        <a href="{% url 'view_ticket' ticket_id=ticket.id %}">
-                                            {{ ticket.subject }}
-                                        </a>
-                                    </td>
-                                    <td>{{ ticket.get_status_display }}</td>
-                                    <td>{{ ticket.priority }}</td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="4" class="text-center">No assigned tickets</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Created Tickets -->
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Created Tickets</h5>
-                    <a href="{% url 'new_ticket' %}" class="btn btn-sm btn-success">Create New</a>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Subject</th>
-                                    <th>Status</th>
-                                    <th>Priority</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for ticket in created_tickets %}
-                                <tr>
-                                    <td>{{ ticket.id }}</td>
-                                    <td>
-                                        <a href="{% url 'view_ticket' ticket_id=ticket.id %}">
-                                            {{ ticket.subject }}
-                                        </a>
-                                    </td>
-                                    <td>{{ ticket.get_status_display }}</td>
-                                    <td>{{ ticket.priority }}</td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="4" class="text-center">No tickets created</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recent Activity -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Recent Activity</h5>
-                </div>
-                <div class="card-body">
-                    <div class="list-group">
-                        {% for activity in recent_activity %}
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">Ticket #{{ activity.ticket.id }} - {{ activity.ticket.subject }}</h6>
-                                <small>{{ activity.created_at|timesince }} ago</small>
-                            </div>
-                            <p class="mb-1">{{ activity.comment|truncatewords:30 }}</p>
-                            <small>
-                                Comment by {{ activity.user.get_full_name|default:activity.user.username }}
-                                {% if activity.is_internal %}
-                                <span class="badge bg-info">Internal</span>
-                                {% endif %}
-                            </small>
-                        </div>
-                        {% empty %}
-                        <div class="list-group-item">No recent activity</div>
-                        {% endfor %}
-                    </div>
+                    <a href="{% url 'new_ticket' %}" class="btn btn-primary btn-lg w-100 mb-3">
+                        <i class="fas fa-plus-circle"></i> Create New Ticket
+                    </a>
+                    <a href="{% url 'my_tickets' %}" class="btn btn-outline-primary btn-lg w-100">
+                        <i class="fas fa-list"></i> View All Tickets
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
-<script>
-    // Add any dashboard-specific JavaScript here
-</script>
+<style>
+    .card {
+        border: none;
+        border-radius: 12px;
+        transition: transform 0.2s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+    }
+
+    .table th {
+        border-top: none;
+        background-color: #f8f9fa;
+    }
+
+    .badge {
+        padding: 0.5em 1em;
+        font-weight: 500;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .quick-actions .btn {
+        text-align: left;
+        padding: 1rem;
+    }
+
+    .quick-actions .btn i {
+        margin-right: 0.5rem;
+    }
+</style>
 {% endblock %}

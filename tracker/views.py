@@ -40,7 +40,7 @@ from .models import (
     Priority
 )
 from .utils import generate_password_reset_token, verify_password_reset_token
-from .forms import StaffTicketForm  # Add this import
+from .forms import TicketForm, StaffTicketForm  # Update existing import
 from django.utils import timezone
 
 
@@ -82,20 +82,6 @@ def role_based_dashboard(request, role=None):
     except TemplateDoesNotExist:
         messages.error(request, f"Dashboard template for {role} not found.")
         return redirect('home')
-
-# @role_required([Role.ADMIN])  # Changed from @superuser_required
-# def admin_dashboard(request):
-#     """Admin dashboard view with statistics"""
-#     context = {
-#         'total_users': UserDetail.objects.count(),
-#         'total_teams': Group.objects.count(),  # Count number of groups
-#         'total_tickets': Ticket.objects.filter(status='ACTIVE').count(),
-#         'total_priorities': Priority.objects.count(),  # Count number of priorities
-#         'user_metrics': get_user_metrics(),
-#         'ticket_metrics': get_ticket_metrics(),
-#         'recent_tickets': get_recent_tickets()
-#     }
-#     return render(request, 'dashboards/admin_dashboard.html', context)
 
 @role_required([Role.ADMIN])
 def admin_dashboard(request):
@@ -334,67 +320,6 @@ def staff_close_ticket(request, ticket_id):
         'ticket': ticket,
     }
     return render(request, 'staff/close_ticket.html', context)
-
-# @permission_required(['tracker.view_ticket', 'tracker.view_org_tickets'])
-# def staff_view_ticket(request, ticket_id):
-#     """Staff can view tickets"""
-#     ticket = get_object_or_404(
-#         Ticket,
-#         Q(created_by=request.user) |
-#         Q(assigned_to=request.user) |
-#         Q(created_by__department=request.user.department),
-#         id=ticket_id
-#     )
-    
-#     context = {
-#         'ticket': ticket,
-#         'comments': ticket.comments.all().order_by('-created_at'),
-#         'can_close': ticket.assigned_to == request.user,
-#         'can_comment': ticket.assigned_to == request.user or ticket.created_by == request.user
-#     }
-#     return render(request, 'staff/view_ticket.html', context)
-
-# @permission_required(['tracker.comment_ticket'])
-# def staff_add_comment(request, ticket_id):
-#     """Staff can comment on assigned or created tickets"""
-#     ticket = get_object_or_404(
-#         Ticket,
-#         Q(assigned_to=request.user) | Q(created_by=request.user),
-#         id=ticket_id
-#     )
-    
-#     if request.method == "POST":
-#         comment = request.POST.get('comment')
-#         if comment:
-#             TicketComment.objects.create(
-#                 ticket=ticket,
-#                 user=request.user,
-#                 comment=comment
-#             )
-#             messages.success(request, "Comment added successfully")
-#         else:
-#             messages.error(request, "Comment cannot be empty")
-            
-#     return redirect('staff_view_ticket', ticket_id=ticket_id)
-
-# @permission_required(['tracker.close_ticket'])
-# def staff_close_ticket(request, ticket_id):
-#     """Staff can close assigned tickets"""
-#     ticket = get_object_or_404(Ticket, assigned_to=request.user, id=ticket_id)
-    
-#     if request.method == "POST":
-#         resolution = request.POST.get('resolution')
-#         if resolution:
-#             ticket.status = 'CLOSED'
-#             ticket.resolution = resolution
-#             ticket.closed_at = timezone.now()
-#             ticket.closed_by = request.user
-#             ticket.save()
-#             messages.success(request, f"Ticket #{ticket.id} closed successfully")
-#         else:
-#             messages.error(request, "Please provide resolution details")
-            
-#     return redirect('staff_view_ticket', ticket_id=ticket_id)
 
 # Helper functions for metrics
 def calculate_team_performance(department):
@@ -670,66 +595,31 @@ def new_account(request):
 #  this are Tcikets control views
 @login_required_with_message
 def new_ticket(request):
-    if request.method == "POST":
-        try:
-            # Extract data from POST
-            subject = request.POST.get("subject")
-            description = request.POST.get("description")
-            assignee_value = request.POST.get("assignee")
-            priority = request.POST.get("priority", "Medium")
-            brand = request.POST.get("brand", "")
+    if request.method == 'POST':
+        form = TicketForm(request.POST)
+        if form.is_valid():
+            ticket = form.save(commit=False)
+            ticket.created_by = request.user
+            ticket.status = Ticket.STATUS_ACTIVE
+            ticket.save()
             
-            # Validate required fields
-            if not subject or not description or not assignee_value:
-                messages.error(request, "Please fill all required fields")
-                return redirect("new_ticket")
-
-            # Handle assignee logic
-            if assignee_value == "me":
-                assignee = request.user
-            elif assignee_value == "team":
-                assignee = None  # Handle team assignment as needed
-            elif assignee_value == "admin":
-                assignee = UserDetail.objects.filter(is_superuser=True).first()
-            else:
-                try:
-                    assignee = UserDetail.objects.get(row_id=assignee_value)  # Changed from id to row_id
-                except UserDetail.DoesNotExist:
-                    assignee = None
-
-            # Create ticket
-            ticket = Ticket.objects.create(
-                subject=subject,
-                description=description,
-                created_by=request.user,
-                assigned_to=assignee,
-                priority=priority,
-                brand=brand,
-                status=1
-            )
-
-            # Handle file attachments
-            files = request.FILES.getlist('attachments')
-            for file in files:
-                TicketAttachment.objects.create(
+            # Create initial comment if provided
+            if 'comment' in request.POST and request.POST['comment'].strip():
+                TicketComment.objects.create(
                     ticket=ticket,
-                    file=file,
-                    file_name=file.name,
-                    uploaded_by=request.user
+                    user=request.user,
+                    comment=request.POST['comment'].strip()
                 )
-
-            messages.success(request, f"Ticket #{ticket.id} created successfully")
-            return redirect("view_ticket", ticket_id=ticket.id)
-
-        except Exception as e:
-            messages.error(request, f"Error creating ticket: {str(e)}")
-            return redirect("new_ticket")
-
-    # GET request
-    context = {
-        'users': UserDetail.objects.filter(is_active=True).exclude(row_id=request.user.row_id)  # Changed from id to row_id
-    }
-    return render(request, "tickets/new_ticket.html", context)
+            
+            messages.success(request, f'Ticket #{ticket.id} has been created successfully.')
+            return redirect('view_ticket', ticket_id=ticket.id)
+    else:
+        form = TicketForm()
+    
+    return render(request, 'tickets/ticket_form.html', {
+        'form': form,
+        'title': 'Create New Ticket'
+    })
 
 @login_required_with_message
 def all_tickets(request):
@@ -1774,3 +1664,44 @@ def admin_view_ticket(request, ticket_id):
         'attachments': attachments,
     }
     return render(request, 'admin/view_ticket.html', context)
+
+@login_required
+def my_tickets(request):
+    """View for showing user's tickets with search functionality"""
+    
+    # Base queryset
+    tickets = Ticket.objects.filter(
+        created_by=request.user
+    ).select_related(
+        'priority',
+        'assigned_to'
+    )
+    
+    # Handle ticket ID search
+    ticket_id = request.GET.get('ticket_id')
+    if ticket_id and ticket_id.isdigit():
+        tickets = tickets.filter(id=ticket_id)
+    else:
+        # If no search, show all tickets ordered by creation date
+        tickets = tickets.order_by('-created_at')
+
+    context = {
+        'tickets': tickets,
+        'title': 'My Tickets'
+    }
+    return render(request, 'tickets/my_tickets.html', context)
+
+@login_required
+def user_profile(request):
+    """User profile view"""
+    user = request.user
+    
+    if request.method == 'POST':
+        # Handle profile updates here
+        pass
+    
+    context = {
+        'user': user,
+        'title': 'My Profile'
+    }
+    return render(request, 'profile/user_profile.html', context)

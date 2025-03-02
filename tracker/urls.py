@@ -18,6 +18,7 @@ urlpatterns = [
     path('ticket/new/', views.new_ticket, name='new_ticket'),
     path('tickets/all/', views.all_tickets, name='all_tickets'),
     path('tickets/search/', views.advanced_search, name='advanced_search'),
+    path('tickets/my/', views.my_tickets, name='my_tickets'),
     path('ticket/<int:ticket_id>/', views.view_ticket, name='view_ticket'),
     path('ticket/<int:ticket_id>/detail/', views.view_ticket_detail, name='view_ticket_detail'),
     path('ticket/<int:ticket_id>/update/', views.update_ticket, name='update_ticket'),
@@ -100,4 +101,7 @@ urlpatterns = [
     path('admin/priority/add/', views.add_priority, name='add_priority'),
     path('admin/priority/list/', views.priority_list, name='priority_list'),
     path('admin/priority/delete/<int:priority_id>/', views.delete_priority, name='delete_priority'),
+
+    # User Profile URL
+    path('profile/', views.user_profile, name='profile'),
 ]
