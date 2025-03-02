@@ -41,6 +41,7 @@ urlpatterns = [
     path('admin/ticket-data/', views.TicketDataView.as_view(), name='admin_ticket_data'),
     path('admin/save-ticket/', views.SaveTicketView.as_view(), name='admin_save_ticket'),
     path('admin/all-tickets/<int:user_id>/', views.AllTicketsView.as_view(), name='admin_all_tickets'),
+    path('admin/ticket/<int:ticket_id>/', views.admin_view_ticket, name='admin_view_ticket'),
 
     # Template URLs
     path('template/ticket/update/', views.update_ticket_template, name='update_ticket_template'),

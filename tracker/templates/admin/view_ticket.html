@@ -1,0 +1,162 @@
+{% extends "../base_admin.html" %}
+
+{% block title %}View Ticket #{{ ticket.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ticket-info {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    .ticket-detail {
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .description-content {
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 15px;
+    }
+    
+    .comment-card {
+        border-left: 4px solid #0d6efd;
+        margin-bottom: 15px;
+    }
+    
+    .badge {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+
+    .attachments-section {
+        margin-top: 20px;
+    }
+
+    .attachment-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .attachment-item:last-child {
+        border-bottom: none;
+    }
+
+    .attachment-item i {
+        color: #0d6efd;
+    }
+
+    .card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+
+    .card-header {
+        border-bottom: 1px solid rgba(0,0,0,.125);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Ticket #{{ ticket.id }}: {{ ticket.subject }}</h4>
+                    <div>
+                        <a href="{% url 'transfer_ticket' ticket.id %}" class="btn btn-warning">
+                            <i class="fa fa-exchange"></i> Transfer Ticket
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="ticket-info">
+                        <div class="ticket-detail">
+                            <i class="fa fa-user"></i>
+                            <strong>Created by:</strong> {{ ticket.created_by.user_name }}
+                        </div>
+                        <div class="ticket-detail">
+                            <i class="fa fa-calendar"></i>
+                            <strong>Created on:</strong> {{ ticket.created_at|date:"Y-m-d H:i" }}
+                        </div>
+                        <div class="ticket-detail">
+                            <i class="fa fa-info-circle"></i>
+                            <strong>Status:</strong>
+                            <span class="badge {% if ticket.status == 2 %}bg-danger{% else %}bg-success{% endif %}">
+                                {{ ticket.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="ticket-detail">
+                            <i class="fa fa-flag"></i>
+                            <strong>Priority:</strong>
+                            <span class="badge bg-{{ ticket.priority.name|lower }}">
+                                {{ ticket.priority.name }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="description-content">
+                        <h5><i class="fa fa-file-text-o"></i> Description</h5>
+                        {{ ticket.description|linebreaks }}
+                    </div>
+
+                    <div class="comments-section mt-4">
+                        <h5><i class="fa fa-comments"></i> Comments</h5>
+                        {% for comment in comments %}
+                            <div class="comment-card card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <strong><i class="fa fa-user"></i> {{ comment.user.user_name }}</strong>
+                                        <small class="text-muted">
+                                            <i class="fa fa-clock-o"></i> {{ comment.created_at|date:"Y-m-d H:i" }}
+                                        </small>
+                                    </div>
+                                    <p class="mb-0 mt-2">{{ comment.comment }}</p>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <p class="text-muted"><i class="fa fa-info-circle"></i> No comments yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fa fa-paperclip"></i> Attachments</h5>
+                </div>
+                <div class="card-body">
+                    {% if attachments %}
+                        <div class="list-group">
+                            {% for attachment in attachments %}
+                                <div class="attachment-item">
+                                    <i class="fa fa-file"></i>
+                                    <a href="{{ attachment.file.url }}" target="_blank" class="text-decoration-none">
+                                        {{ attachment.file_name }}
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0"><i class="fa fa-info-circle"></i> No attachments</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

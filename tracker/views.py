@@ -100,25 +100,35 @@ def role_based_dashboard(request, role=None):
 @role_required([Role.ADMIN])
 def admin_dashboard(request):
     """Admin dashboard view with statistics"""
+    
+    # Get all tickets regardless of assignment using select_related for better performance
+    all_tickets = Ticket.objects.select_related(
+        'created_by',
+        'created_by__role',
+        'assigned_to',
+        'priority'
+    ).all().order_by('-created_at')
+
+    # Calculate metrics
+    user_metrics = UserDetail.objects.values(
+        'role__name'
+    ).annotate(
+        count=models.Count('id')
+    ).order_by('role__name')
+
+    ticket_metrics = Ticket.objects.values(
+        'status'
+    ).annotate(
+        count=models.Count('id')
+    ).order_by('status')
+
     context = {
         'total_users': UserDetail.objects.count(),
         'total_teams': Group.objects.count(),
-        'total_tickets': Ticket.objects.count(),
-        'recent_tickets': Ticket.objects.select_related(
-            'created_by',
-            'assigned_to',
-            'priority'
-        ).all().order_by('-created_at'),
-        'staff_tickets': Ticket.objects.select_related(
-            'created_by',
-            'assigned_to',
-            'priority'
-        ).filter(created_by__role__name='STAFF').order_by('-created_at'),
-        'user_tickets': Ticket.objects.select_related(
-            'created_by',
-            'assigned_to',
-            'priority'
-        ).filter(created_by__role__name='USER').order_by('-created_at')
+        'total_tickets': all_tickets.count(),
+        'all_tickets': all_tickets,
+        'user_metrics': user_metrics,
+        'ticket_metrics': ticket_metrics,
     }
     return render(request, 'dashboards/admin_dashboard.html', context)
 
@@ -1382,17 +1392,35 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import permission_required
 from django.contrib import messages
 from tracker.models import UserDetail, Ticket, Role
-@permission_required('tracker.view_admin_dashboard', raise_exception=True)  # 🔹 Fix app name
+@role_required([Role.ADMIN])
 def admin_dashboard(request):
-    """Admin Dashboard"""
+    """Admin dashboard view with statistics"""
     context = {
         'total_users': UserDetail.objects.count(),
+        'total_teams': Group.objects.count(),
         'total_tickets': Ticket.objects.count(),
-        'recent_tickets': Ticket.objects.order_by('-created_at')[:10],
+        # Get all tickets with related data
+        'all_tickets': Ticket.objects.select_related(
+            'created_by',
+            'assigned_to',
+            'priority'
+        ).all().order_by('-created_at'),
+        # Staff created tickets
+        'staff_tickets': Ticket.objects.select_related(
+            'created_by',
+            'assigned_to',
+            'priority'
+        ).filter(created_by__role__name='STAFF').order_by('-created_at'),
+        # User created tickets
+        'user_tickets': Ticket.objects.select_related(
+            'created_by',
+            'assigned_to',
+            'priority'
+        ).filter(created_by__role__name='USER').order_by('-created_at')
     }
     return render(request, 'dashboards/admin_dashboard.html', context)
 
-
+    
 @permission_required('auth.view_group')
 def group_list(request):
     """View list of all groups"""
@@ -1733,3 +1761,16 @@ def remove_team_member(request, team_id, user_id):
         
     return redirect('manage_team_view', team_id=team_id)
 
+@role_required([Role.ADMIN])
+def admin_view_ticket(request, ticket_id):
+    """Admin view for ticket details"""
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    comments = TicketComment.objects.filter(ticket=ticket).order_by('-created_at')
+    attachments = TicketAttachment.objects.filter(ticket=ticket)
+    
+    context = {
+        'ticket': ticket,
+        'comments': comments,
+        'attachments': attachments,
+    }
+    return render(request, 'admin/view_ticket.html', context)

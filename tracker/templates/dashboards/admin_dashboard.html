@@ -1,8 +1,60 @@
-{% extends 'admin/base_admin.html' %}
+{% extends "../base_admin.html" %}
 {% load static %}
 
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: linear-gradient(45deg, #4e73df, #224abe);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        transition: transform 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .ticket-table {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+
+    .table th {
+        background: #f8f9fc;
+        border-top: none;
+    }
+
+    .badge {
+        padding: 0.5em 1em;
+        font-weight: 500;
+    }
+
+    .btn-action {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        margin: 0 2px;
+    }
+
+    .priority-high {
+        background-color: #dc3545;
+    }
+
+    .priority-medium {
+        background-color: #ffc107;
+    }
+
+    .priority-low {
+        background-color: #28a745;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container-fluid mt-4">
     <div class="d-flex">
         <!-- Sidebar -->
         <div class="sidebar">
@@ -62,55 +114,50 @@
             </div>
 
             <!-- Statistics Cards -->
-            <div class="row g-4 mb-4">
-                <div class="col-md-3">
-                    <div class="card bg-primary text-white h-100">
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card stats-card h-100">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="card-subtitle mb-2">Total Users</h6>
-                                    <h2 class="card-title mb-0">{{ total_users }}</h2>
+                            <div class="row align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-uppercase mb-1">Total Users</div>
+                                    <div class="h5 mb-0 font-weight-bold">{{ total_users }}</div>
                                 </div>
-                                <i class="fas fa-users fa-2x opacity-50"></i>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card bg-success text-white h-100">
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card stats-card h-100">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="card-subtitle mb-2">Active Tickets</h6>
-                                    <h2 class="card-title mb-0">{{ total_tickets }}</h2>
+                            <div class="row align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-uppercase mb-1">Total Teams</div>
+                                    <div class="h5 mb-0 font-weight-bold">{{ total_teams }}</div>
                                 </div>
-                                <i class="fas fa-ticket-alt fa-2x opacity-50"></i>
+                                <div class="col-auto">
+                                    <i class="fas fa-user-friends fa-2x"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card bg-info text-white h-100">
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card stats-card h-100">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="card-subtitle mb-2">Total Teams</h6>
-                                    <h2 class="card-title mb-0">{{ total_teams }}</h2>
+                            <div class="row align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-uppercase mb-1">Total Tickets</div>
+                                    <div class="h5 mb-0 font-weight-bold">{{ total_tickets }}</div>
                                 </div>
-                                <i class="fas fa-user-friends fa-2x opacity-50"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-warning text-white h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="card-subtitle mb-2">Priorities</h6>
-                                    <h2 class="card-title mb-0">{{ total_priorities }}</h2>
+                                <div class="col-auto">
+                                    <i class="fas fa-ticket-alt fa-2x"></i>
                                 </div>
-                                <i class="fas fa-flag fa-2x opacity-50"></i>
                             </div>
                         </div>
                     </div>
@@ -206,77 +253,65 @@
                 </div>
             </div>
 
-            <!-- Recent Tickets -->
-            <div class="recent-tickets card">
-                <div class="card-header bg-light">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-ticket-alt me-2"></i>All Tickets</h5>
-                        <span class="badge bg-primary">{{ recent_tickets.count }} Total</span>
-                    </div>
+            <!-- All Tickets Table -->
+            <div class="card ticket-table mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">All Tickets</h6>
                 </div>
                 <div class="card-body">
-                    {% if recent_tickets %}
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Subject</th>
-                                        <th>Created By</th>
-                                        <th>Assigned To</th>
-                                        <th>Priority</th>
-                                        <th>Status</th>
-                                        <th>Created At</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for ticket in recent_tickets %}
-                                    <tr>
-                                        <td>{{ ticket.id }}</td>
-                                        <td>{{ ticket.subject }}</td>
-                                        <td>
-                                            <span class="badge bg-info">
-                                                {{ ticket.created_by.user_name }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-secondary">
-                                                {{ ticket.assigned_to.user_name|default:"Unassigned" }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-{{ ticket.priority.name|lower }}">
-                                                {{ ticket.priority.name|default:"None" }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-{{ ticket.get_status_display|lower }}">
-                                                {{ ticket.get_status_display }}
-                                            </span>
-                                        </td>
-                                        <td>{{ ticket.created_at|date:"Y-m-d H:i" }}</td>
-                                        <td>
-                                            <a href="{% url 'admin_view_ticket' ticket.id %}" class="btn btn-sm btn-info">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <p class="text-muted">No tickets found.</p>
-                    {% endif %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Subject</th>
+                                    <th>Created By</th>
+                                    <th>Role</th>
+                                    <th>Assigned To</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Created At</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ticket in all_tickets %}
+                                <tr>
+                                    <td>{{ ticket.id }}</td>
+                                    <td>{{ ticket.subject }}</td>
+                                    <td>{{ ticket.created_by.user_name }}</td>
+                                    <td>{{ ticket.created_by.role.name }}</td>
+                                    <td>{{ ticket.assigned_to.user_name|default:"Unassigned" }}</td>
+                                    <td>
+                                        <span class="badge priority-{{ ticket.priority.name|lower }}">
+                                            {{ ticket.priority.name }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if ticket.status == 2 %}bg-danger{% else %}bg-success{% endif %}">
+                                            {{ ticket.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ ticket.created_at|date:"Y-m-d H:i" }}</td>
+                                    <td>
+                                        <a href="{% url 'admin_view_ticket' ticket.id %}" class="btn btn-info btn-action">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'transfer_ticket' ticket.id %}" class="btn btn-warning btn-action">
+                                            <i class="fas fa-exchange-alt"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_css %}
 <style>
     .container-fluid {
         padding: 0;
@@ -316,6 +351,16 @@
         display: inline-block;
         margin-left: 10px;
     }
+    .badge {
+        padding: 0.5em 1em;
+    }
+    .btn-sm {
+        margin: 0 2px;
+    }
+    .table td {
+        vertical-align: middle;
+    }
+    
 </style>
 {% endblock %}
 
