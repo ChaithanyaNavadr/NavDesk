@@ -171,6 +171,17 @@
                                 <div class="text-danger">{{ form.assigned_to.errors }}</div>
                             {% endif %}
                         </div>
+                        <div class="mb-3">
+                            <label>Attachments:</label>
+                            <input type="file" name="attachments" multiple class="form-control">
+                            {% if form.attachments.errors %}
+                            <div class="text-danger">
+                                {% for error in form.attachments.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
 
                         <!-- Submit Button -->
                         <div class="form-group">

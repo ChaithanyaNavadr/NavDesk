@@ -610,6 +610,16 @@ def new_ticket(request):
                     user=request.user,
                     comment=request.POST['comment'].strip()
                 )
+
+            # Handle file attachments
+                files = request.FILES.getlist('attachments')
+                for file in files:
+                    TicketAttachment.objects.create(
+                        ticket=ticket,
+                        file=file,
+                        file_name=file.name,
+                        uploaded_by=request.user
+                    )
             
             messages.success(request, f'Ticket #{ticket.id} has been created successfully.')
             return redirect('view_ticket', ticket_id=ticket.id)
@@ -688,38 +698,48 @@ def save_ticket(request):
 
 @login_required_with_message
 def update_ticket(request, ticket_id):
-    try:
-        ticket = Ticket.objects.get(id=ticket_id)
-        
-        # Only allow creator to edit the ticket
-        if ticket.created_by != request.user:
-            messages.error(request, "You don't have permission to edit this ticket.")
-            return redirect('view_ticket', ticket_id=ticket_id)
+    """Update existing ticket"""
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    
+    # Check if user has permission to edit
+    if ticket.created_by != request.user and not request.user.is_staff:
+        messages.error(request, "You don't have permission to edit this ticket.")
+        return redirect('view_ticket', ticket_id=ticket_id)
 
-        if request.method == "POST":
-            # Update ticket fields
-            ticket.subject = request.POST.get('subject', ticket.subject)
-            ticket.priority = request.POST.get('priority', ticket.priority)
-            ticket.status = int(request.POST.get('status', ticket.status))
-            
-            # Handle assignee
-            assignee_id = request.POST.get('assigned_to')
-            if assignee_id:
-                try:
-                    ticket.assigned_to = User.objects.get(id=assignee_id)
-                except User.DoesNotExist:
-                    ticket.assigned_to = None
-            else:
-                ticket.assigned_to = None
-
+    if request.method == "POST":
+        form = TicketForm(request.POST, request.FILES, instance=ticket)
+        if form.is_valid():
+            ticket = form.save(commit=False)
             ticket.save()
 
-            messages.success(request, "Ticket updated successfully")
-            return redirect('view_ticket', ticket_id=ticket_id)
+            # Handle new attachments
+            files = request.FILES.getlist('attachments')
+            for file in files:
+                TicketAttachment.objects.create(
+                    ticket=ticket,
+                    file=file,
+                    file_name=file.name,
+                    uploaded_by=request.user
+                )
 
-    except Ticket.DoesNotExist:
-        messages.error(request, "Ticket not found")
-        return redirect('all_tickets')
+            # Add update comment if provided
+            if 'comment' in request.POST and request.POST['comment'].strip():
+                TicketComment.objects.create(
+                    ticket=ticket,
+                    user=request.user,
+                    comment=request.POST['comment'].strip()
+                )
+
+            messages.success(request, f'Ticket #{ticket.id} updated successfully.')
+            return redirect('view_ticket', ticket_id=ticket.id)
+    else:
+        form = TicketForm(instance=ticket)
+
+    return render(request, 'tickets/update_ticket.html', {
+        'form': form,
+        'ticket': ticket,
+        'title': f'Update Ticket #{ticket.id}'
+    })
 
 @login_required_with_message
 def delete_ticket(request, ticket_id):
