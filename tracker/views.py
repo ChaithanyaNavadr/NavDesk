@@ -85,36 +85,19 @@ def role_based_dashboard(request, role=None):
 
 @role_required([Role.ADMIN])
 def admin_dashboard(request):
-    """Admin dashboard view with statistics"""
-    
-    # Get all tickets regardless of assignment using select_related for better performance
-    all_tickets = Ticket.objects.select_related(
+    # Get tickets assigned to admin
+    assigned_tickets = Ticket.objects.select_related(
         'created_by',
-        'created_by__role',
-        'assigned_to',
-        'priority'
-    ).all().order_by('-created_at')
-
-    # Calculate metrics
-    user_metrics = UserDetail.objects.values(
-        'role__name'
-    ).annotate(
-        count=models.Count('id')
-    ).order_by('role__name')
-
-    ticket_metrics = Ticket.objects.values(
-        'status'
-    ).annotate(
-        count=models.Count('id')
-    ).order_by('status')
-
+        'priority',
+        'assigned_to'
+    ).filter(
+        assigned_to=request.user
+    ).order_by('-created_at')
+    
+    # Rest of your existing view code...
     context = {
-        'total_users': UserDetail.objects.count(),
-        'total_teams': Group.objects.count(),
-        'total_tickets': all_tickets.count(),
-        'all_tickets': all_tickets,
-        'user_metrics': user_metrics,
-        'ticket_metrics': ticket_metrics,
+        'assigned_tickets': assigned_tickets,
+        # ...other context data...
     }
     return render(request, 'dashboards/admin_dashboard.html', context)
 
@@ -152,7 +135,7 @@ def employee_dashboard(request):
 @role_required([Role.CLIENT])
 def client_dashboard(request):
     context = {
-        'client_tickets': Ticket.objects.filter(created_by=request.user),
+        'client_tickets': Ticket.objects.filter(created_by(request.user)),
         'resolution_metrics': calculate_resolution_metrics(request.user),
         'sla_metrics': calculate_sla_metrics(request.user)
     }
@@ -368,7 +351,7 @@ def forgot_password(request):
         email = request.POST.get('email').strip()
         
         try:
-            user = User.objects.filter(email__iexact=email).first()
+            user = User.objects.filter(email__iexact(email)).first()
             if user:
                 # Generate reset token
                 token = generate_reset_token(email)

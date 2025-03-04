@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Add Bootstrap and jQuery scripts if not in base.html -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'dashboard' %}">
+            <i class="fas fa-ticket-alt me-2"></i>Ticket System
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
+                       href="{% url 'dashboard' %}">
+                        <i class="fas fa-home me-1"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'new_ticket' %}active{% endif %}" 
+                       href="{% url 'new_ticket' %}">
+                        <i class="fas fa-plus-circle me-1"></i>New Ticket
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'my_tickets' %}active{% endif %}" 
+                       href="{% url 'my_tickets' %}">
+                        <i class="fas fa-list me-1"></i>My Tickets
+                    </a>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" 
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-circle me-1"></i>
+                        {{ request.user.user_name }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" href="{% url 'profile' %}">
+                                <i class="fas fa-user me-2"></i>Profile
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'user_settings' %}">
+                                <i class="fas fa-cog me-2"></i>Settings
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'change_password' %}">
+                                <i class="fas fa-key me-2"></i>Change Password
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="{% url 'logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<style>
+    .navbar {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 0.8rem 1rem;
+    }
+
+    .navbar-brand {
+        font-weight: 600;
+    }
+
+    .nav-link {
+        padding: 0.5rem 1rem !important;
+        transition: all 0.3s ease;
+    }
+
+    .nav-link:hover {
+        transform: translateY(-2px);
+    }
+
+    .navbar-nav .nav-link.active {
+        font-weight: 600;
+        position: relative;
+    }
+
+    .navbar-nav .nav-link.active:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 1rem;
+        right: 1rem;
+        height: 3px;
+        background: rgba(255,255,255,0.5);
+        border-radius: 3px 3px 0 0;
+    }
+
+    .dropdown-menu {
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+        border-radius: 0.5rem;
+        padding: 0.5rem 0;
+        margin-top: 0.5rem;
+        min-width: 200px;
+    }
+
+    .dropdown-item {
+        padding: 0.7rem 1.5rem;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f8f9fa;
+        transform: translateX(5px);
+    }
+
+    .dropdown-item i {
+        width: 1.25rem;
+        margin-right: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .dropdown-divider {
+        margin: 0.5rem 0;
+        opacity: 0.1;
+    }
+
+    .text-danger:hover {
+        background-color: #fce8e8;
+    }
+</style>
+
+<!-- Add this script at the bottom -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+    var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+        return new bootstrap.Dropdown(dropdownToggleEl);
+    });
+});
+</script>
+
+<div class="container-fluid py-4">
+    {% block dashboard_content %}{% endblock %}
+</div>
+{% endblock %}

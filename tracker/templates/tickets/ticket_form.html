@@ -1,8 +1,90 @@
-{% extends 'base.html' %}
+{% extends 'shared/dashboard_base.html' %}
+{% load static %}
 
 {% block title %}Create New Ticket{% endblock %}
 
-{% block extra_css %}
+{% block dashboard_content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2 class="mb-4">Create New Ticket</h2>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="card">
+                    <div class="card-body">
+                        <!-- Subject Field -->
+                        <div class="form-group mb-3">
+                            <label for="id_subject">Subject</label>
+                            {{ form.subject }}
+                            {% if form.subject.errors %}
+                                <div class="text-danger">{{ form.subject.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Description Field -->
+                        <div class="form-group mb-3">
+                            <label for="id_description">Description</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Priority Field -->
+                        <div class="form-group mb-3">
+                            <label for="id_priority">Priority</label>
+                            <select name="priority" id="id_priority" class="form-control" required>
+                                <option value="">Select Priority</option>
+                                {% for priority in form.priority.field.queryset %}
+                                    <option value="{{ priority.id }}" {% if form.priority.value == priority.id %}selected{% endif %}>
+                                        {{ priority.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.priority.errors %}
+                                <div class="text-danger">{{ form.priority.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Assignee Field -->
+                        <div class="form-group mb-3">
+                            <label for="id_assigned_to">Assign To</label>
+                            <select name="assigned_to" id="id_assigned_to" class="form-control">
+                                <option value="">--- Select Assignee ---</option>
+                                {% for user in form.assigned_to.field.queryset %}
+                                    <option value="{{ user.row_id }}" {% if form.assigned_to.value == user.row_id %}selected{% endif %}>
+                                        {{ user.user_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.assigned_to.errors %}
+                                <div class="text-danger">{{ form.assigned_to.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label>Attachments:</label>
+                            <input type="file" name="attachments" multiple class="form-control">
+                            {% if form.attachments.errors %}
+                            <div class="text-danger">
+                                {% for error in form.attachments.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">Create Ticket</button>
+                            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <style>
     .card {
         border: none;
@@ -111,87 +193,4 @@
         }
     }
 </style>
-{% endblock %}
-
-{% block content %}
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <h2 class="mb-4">Create New Ticket</h2>
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="card">
-                    <div class="card-body">
-                        <!-- Subject Field -->
-                        <div class="form-group mb-3">
-                            <label for="id_subject">Subject</label>
-                            {{ form.subject }}
-                            {% if form.subject.errors %}
-                                <div class="text-danger">{{ form.subject.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Description Field -->
-                        <div class="form-group mb-3">
-                            <label for="id_description">Description</label>
-                            {{ form.description }}
-                            {% if form.description.errors %}
-                                <div class="text-danger">{{ form.description.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Priority Field -->
-                        <div class="form-group mb-3">
-                            <label for="id_priority">Priority</label>
-                            <select name="priority" id="id_priority" class="form-control" required>
-                                <option value="">Select Priority</option>
-                                {% for priority in form.priority.field.queryset %}
-                                    <option value="{{ priority.id }}" {% if form.priority.value == priority.id %}selected{% endif %}>
-                                        {{ priority.name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            {% if form.priority.errors %}
-                                <div class="text-danger">{{ form.priority.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Assignee Field -->
-                        <div class="form-group mb-3">
-                            <label for="id_assigned_to">Assign To</label>
-                            <select name="assigned_to" id="id_assigned_to" class="form-control">
-                                <option value="">--- Select Assignee ---</option>
-                                {% for user in form.assigned_to.field.queryset %}
-                                    <option value="{{ user.row_id }}" {% if form.assigned_to.value == user.row_id %}selected{% endif %}>
-                                        {{ user.user_name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            {% if form.assigned_to.errors %}
-                                <div class="text-danger">{{ form.assigned_to.errors }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="mb-3">
-                            <label>Attachments:</label>
-                            <input type="file" name="attachments" multiple class="form-control">
-                            {% if form.attachments.errors %}
-                            <div class="text-danger">
-                                {% for error in form.attachments.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Submit Button -->
-                        <div class="form-group">
-                            <button type="submit" class="btn btn-primary">Create Ticket</button>
-                            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
-                        </div>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 {% endblock %}
