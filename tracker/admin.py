@@ -20,11 +20,39 @@ class RoleAdmin(admin.ModelAdmin):
 
 # User Detail Admin (Register only ONCE)
 @admin.register(UserDetail)
-class UserDetailAdmin(BaseUserAdmin):
+class UserDetailAdmin(admin.ModelAdmin):
     list_display = ('user_id', 'user_name', 'role', 'is_active')
     list_filter = ('role', 'is_active')
     search_fields = ('user_id', 'user_name')
     ordering = ('user_id',)
+
+    # Define the fields to be shown in the add/edit form
+    fieldsets = (
+        (None, {
+            'fields': ('user_id', 'user_name', 'password')
+        }),
+        ('Role and Status', {
+            'fields': ('role', 'is_active', 'is_staff', 'is_superuser')
+        }),
+    )
+
+    # Fields to be used when creating a new user
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('user_id', 'user_name', 'role', 'password'),
+        }),
+    )
+
+    def get_fieldsets(self, request, obj=None):
+        if not obj:
+            return self.add_fieldsets
+        return super().get_fieldsets(request, obj)
+
+    def save_model(self, request, obj, form, change):
+        if not change:  # If creating a new user
+            obj.set_password(form.cleaned_data['password'])
+        super().save_model(request, obj, form, change)
 
     def get_queryset(self, request):
         """Show different users based on the logged-in admin's role"""

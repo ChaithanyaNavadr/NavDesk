@@ -1,6 +1,8 @@
-{% extends 'base.html' %}
+{% extends "shared/staff_base.html" %}
 
-{% block content %}
+{% block title %}View Ticket #{{ ticket.id }}{% endblock %}
+
+{% block staff_content %}
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-8">

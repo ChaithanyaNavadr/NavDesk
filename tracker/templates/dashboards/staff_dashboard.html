@@ -1,7 +1,9 @@
-{% extends 'base.html' %}
+{% extends 'shared/staff_base.html' %}
 
-{% block content %}
-<div class="container-fluid py-4">
+{% block title %}Staff Dashboard{% endblock %}
+
+{% block staff_content %}
+<div class="container-fluid">
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Staff Dashboard</h2>
@@ -178,59 +180,58 @@
         </div>
     </div>
 </div>
-</div>
 {% endblock %}
 
 {% block extra_css %}
 <style>
-.card {
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    border: none;
-    margin-bottom: 1.5rem;
-}
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: none;
+        margin-bottom: 1.5rem;
+    }
 
-.btn-group .btn {
-    padding: 0.25rem 0.5rem;
-}
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+    }
 
-.badge {
-    padding: 0.5em 0.8em;
-}
+    .badge {
+        padding: 0.5em 0.8em;
+    }
 
-.table th {
-    font-weight: 500;
-}
+    .table th {
+        font-weight: 500;
+    }
 
-.opacity-50 {
-    opacity: 0.5;
-}
+    .opacity-50 {
+        opacity: 0.5;
+    }
 
-.table > :not(caption) > * > * {
-    padding: 1rem;
-}
+    .table > :not(caption) > * > * {
+        padding: 1rem;
+    }
 
-.dropdown-menu {
-    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
-}
+    .dropdown-menu {
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+    }
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-$(document).ready(function() {
-    // Enable tooltips
-    $('[data-bs-toggle="tooltip"]').tooltip();
-    
-    // Highlight active filter
-    const urlParams = new URLSearchParams(window.location.search);
-    const status = urlParams.get('status');
-    if (status) {
-        $('.dropdown-item').each(function() {
-            if ($(this).attr('href').includes(status)) {
-                $(this).addClass('active');
-            }
-        });
-    }
-});
+    $(document).ready(function() {
+        // Enable tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
+        
+        // Highlight active filter
+        const urlParams = new URLSearchParams(window.location.search);
+        const status = urlParams.get('status');
+        if (status) {
+            $('.dropdown-item').each(function() {
+                if ($(this).attr('href').includes(status)) {
+                    $(this).addClass('active');
+                }
+            });
+        }
+    });
 </script>
 {% endblock %}

@@ -85,19 +85,45 @@ def role_based_dashboard(request, role=None):
 
 @role_required([Role.ADMIN])
 def admin_dashboard(request):
-    # Get tickets assigned to admin
+    """Admin dashboard view with statistics"""
+    # Get tickets assigned to admin (current user)
     assigned_tickets = Ticket.objects.select_related(
         'created_by',
         'priority',
         'assigned_to'
     ).filter(
-        assigned_to=request.user
+        assigned_to=request.user,
+        status=Ticket.STATUS_ACTIVE  # Only show active tickets
     ).order_by('-created_at')
-    
-    # Rest of your existing view code...
+
+    # Get all tickets for overview
+    all_tickets = Ticket.objects.select_related(
+        'created_by',
+        'priority',
+        'assigned_to',
+        'created_by__role'  # Include role information
+    ).all().order_by('-created_at')
+
+    # Calculate metrics
     context = {
         'assigned_tickets': assigned_tickets,
-        # ...other context data...
+        'all_tickets': all_tickets,
+        'total_users': UserDetail.objects.count(),
+        'total_teams': Group.objects.count(),
+        'total_tickets': all_tickets.count(),
+        'assigned_count': assigned_tickets.count(),
+        'open_count': all_tickets.filter(status=Ticket.STATUS_ACTIVE).count(),
+        'closed_count': all_tickets.filter(status=Ticket.STATUS_CLOSED).count(),
+        'user_metrics': UserDetail.objects.values(
+            'role__name'
+        ).annotate(
+            count=Count('row_id')
+        ),
+        'ticket_metrics': Ticket.objects.values(
+            'status'
+        ).annotate(
+            count=Count('id')
+        )
     }
     return render(request, 'dashboards/admin_dashboard.html', context)
 
@@ -1288,28 +1314,44 @@ from tracker.models import UserDetail, Ticket, Role
 @role_required([Role.ADMIN])
 def admin_dashboard(request):
     """Admin dashboard view with statistics"""
+    # Get tickets assigned to admin (current user)
+    assigned_tickets = Ticket.objects.select_related(
+        'created_by',
+        'priority',
+        'assigned_to'
+    ).filter(
+        assigned_to=request.user,
+        status=Ticket.STATUS_ACTIVE  # Only show active tickets
+    ).order_by('-created_at')
+
+    # Get all tickets for overview
+    all_tickets = Ticket.objects.select_related(
+        'created_by',
+        'priority',
+        'assigned_to',
+        'created_by__role'  # Include role information
+    ).all().order_by('-created_at')
+
+    # Calculate metrics
     context = {
+        'assigned_tickets': assigned_tickets,
+        'all_tickets': all_tickets,
         'total_users': UserDetail.objects.count(),
         'total_teams': Group.objects.count(),
-        'total_tickets': Ticket.objects.count(),
-        # Get all tickets with related data
-        'all_tickets': Ticket.objects.select_related(
-            'created_by',
-            'assigned_to',
-            'priority'
-        ).all().order_by('-created_at'),
-        # Staff created tickets
-        'staff_tickets': Ticket.objects.select_related(
-            'created_by',
-            'assigned_to',
-            'priority'
-        ).filter(created_by__role__name='STAFF').order_by('-created_at'),
-        # User created tickets
-        'user_tickets': Ticket.objects.select_related(
-            'created_by',
-            'assigned_to',
-            'priority'
-        ).filter(created_by__role__name='USER').order_by('-created_at')
+        'total_tickets': all_tickets.count(),
+        'assigned_count': assigned_tickets.count(),
+        'open_count': all_tickets.filter(status=Ticket.STATUS_ACTIVE).count(),
+        'closed_count': all_tickets.filter(status=Ticket.STATUS_CLOSED).count(),
+        'user_metrics': UserDetail.objects.values(
+            'role__name'
+        ).annotate(
+            count=Count('row_id')
+        ),
+        'ticket_metrics': Ticket.objects.values(
+            'status'
+        ).annotate(
+            count=Count('id')
+        )
     }
     return render(request, 'dashboards/admin_dashboard.html', context)
 
