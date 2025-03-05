@@ -15,7 +15,8 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 # Role Admin
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name')
+    list_display = ('name',)
+    fields = ('name',)  # Only show name field in the form
     search_fields = ('name',)
 
 # User Detail Admin (Register only ONCE)

@@ -42,15 +42,16 @@ class Role(models.Model):
         (STAFF, 'Staff'),
     ]
 
-    id = models.PositiveSmallIntegerField(choices=ROLE_CHOICES, primary_key=True)
-    name = models.CharField(max_length=50)
+    # Change id field to AutoField
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=50, unique=True)
 
     class Meta:
         ordering = ['id']
         verbose_name_plural = 'Roles'
 
     def __str__(self):
-        return self.get_id_display()
+        return self.name
 
     @classmethod
     def create_missing_roles(cls):
@@ -62,7 +63,7 @@ class Role(models.Model):
                 print(f"Created role: {role_name}")
 
     def get_name_display(self):
-        return dict(self.ROLE_CHOICES)[self.id]
+        return self.name
 
     @classmethod
     def setup_permissions(cls):
