@@ -216,6 +216,9 @@ class Ticket(models.Model):
     def __str__(self):
         return f"{self.id} - {self.subject}"
 
+    def get_status_display(self):
+        return dict(self.STATUS_CHOICES).get(self.status, 'Unknown')
+
     class Meta:
         ordering = ['-created_at']  # Default ordering by creation date, newest first
         indexes = [

@@ -1,57 +1,193 @@
-{% extends 'base_admin.html' %}
+{% extends 'shared/dashboard_base.html' %}
 {% load static %}
 
-{% block title %}View Ticket - Admin{% endblock %}
+{% block title %}View Ticket #{{ ticket.id }} - Admin{% endblock %}
 
-{% block extra_css %}
-<link href="{% static 'assets/css/select2.min.css' %}" rel="stylesheet">
-<link href="{% static 'assets/css/tagsinput.css' %}" rel="stylesheet">
-<style>
-    input, select, textarea { max-width: 100%; }
-    .commentbox {
-        border: 1px solid #ccc;
-        padding: 5px;
-    }
-    /* ...existing styles... */
-</style>
-{% endblock %}
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Ticket Details Column -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-ticket-alt me-2"></i>Ticket #{{ ticket.id }}
+                    </h5>
+                    <span class="badge {% if ticket.status == 1 %}bg-success{% elif ticket.status == 2 %}bg-danger{% else %}bg-warning{% endif %}">
+                        {{ ticket.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ ticket.subject }}</h4>
+                    <div class="ticket-metadata mb-4">
+                        <small class="text-muted">
+                            Created by {{ ticket.created_by.user_name }} on {{ ticket.created_at|date:"Y-m-d H:i" }}
+                        </small>
+                    </div>
+                    
+                    <div class="ticket-description mb-4">
+                        {{ ticket.description|safe }}
+                    </div>
 
-{% block sidebar_content %}
-<div class="mt-5 hidden-xs hidden_md"></div>
-<div class="px-4 w-100">
-    <div class="my-3">
-        <label>Assignee: <span class="text-danger">*</span></label>
-        <div class="ticket_select">
-            <select id="ddlassignee" class="form-control">
-                <option value="0">-- Select --</option>
-            </select>
+                    {% if ticket.attachments.exists %}
+                    <div class="attachments mb-4">
+                        <h6>Attachments</h6>
+                        <ul class="list-unstyled">
+                            {% for attachment in ticket.attachments.all %}
+                            <li>
+                                <i class="fas fa-paperclip me-2"></i>
+                                <a href="{{ attachment.file.url }}" target="_blank">
+                                    {{ attachment.filename }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Comments</h5>
+                </div>
+                <div class="card-body">
+                    {% if ticket.comments.exists %}
+                        {% for comment in ticket.comments.all %}
+                        <div class="comment mb-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ comment.user.user_name }}</strong>
+                                    <small class="text-muted ms-2">
+                                        {{ comment.created_at|date:"Y-m-d H:i" }}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="comment-content mt-2">
+                                {{ comment.content|safe }}
+                            </div>
+                        </div>
+                        {% if not forloop.last %}<hr>{% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center">No comments yet</p>
+                    {% endif %}
+
+                    <!-- Add Comment Form -->
+                    <form method="POST" action="{% url 'admin_add_comment' ticket.id %}">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="comment">Add Comment</label>
+                            <textarea id="comment" name="comment" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">
+                            <i class="fas fa-comment"></i> Add Comment
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
-        <span id="spnddlassignee" class="text-danger" style="display:none;"></span>
-    </div>
-    <!-- ...rest of the form fields... -->
-</div>
-{% endblock %}
 
-{% block main_content %}
-<div class="card border-0 pb-3 mb-3">
-    <!-- ...existing content... -->
+        <!-- Ticket Management Column -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Ticket Management</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{% url 'admin_update_ticket' ticket.id %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label>Assignee</label>
+                            <select name="assigned_to" class="form-select">
+                                <option value="">-- Select Assignee --</option>
+                                {% for user in staff_users %}
+                                <option value="{{ user.id }}" {% if ticket.assigned_to.id == user.id %}selected{% endif %}>
+                                    {{ user.user_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Priority</label>
+                            <select name="priority" class="form-select">
+                                {% for priority in priorities %}
+                                <option value="{{ priority.id }}" {% if ticket.priority.id == priority.id %}selected{% endif %}>
+                                    {{ priority.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Status</label>
+                            <select name="status" class="form-select">
+                                {% for status in status_choices %}
+                                <option value="{{ status.0 }}" {% if ticket.status == status.0 %}selected{% endif %}>
+                                    {{ status.1 }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-save"></i> Update Ticket
+                        </button>
+                    </form>
+
+                    <hr>
+
+                    <div class="d-grid gap-2">
+                        {% if ticket.status != 2 %}
+                        <a href="{% url 'admin_close_ticket' ticket.id %}" 
+                           class="btn btn-danger"
+                           onclick="return confirm('Are you sure you want to close this ticket?')">
+                            <i class="fas fa-times-circle"></i> Close Ticket
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-{% endblock %}
+
+<style>
+    .comment {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.5rem;
+    }
+
+    .ticket-metadata {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: none;
+        margin-bottom: 1rem;
+    }
+
+    .form-select, .form-control {
+        border-radius: 0.375rem;
+    }
+</style>
 
 {% block extra_js %}
-<script src="{% static 'assets/js/ckeditor/ckeditor.js' %}"></script>
 <script>
-var arrComment = null;
-const toastEl = $('#toastMessage');
-const toast = new bootstrap.Toast(toastEl);
-
 $(document).ready(function() {
-    $('#hdnreplytype').val("0");
-    $("#txtsearch").hide();
-    $("#hdnticketid").val(atob("{{ ticket_id }}"));
-    bindmaster();
+    // Initialize any necessary plugins
+    $('.form-select').select2({
+        theme: 'bootstrap4'
+    });
 });
-
-// ...rest of your JavaScript functions...
 </script>
+{% endblock %}
 {% endblock %}

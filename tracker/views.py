@@ -25,7 +25,8 @@ import json
 import jwt
 import re
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
+from django.utils import timezone
 
 from .decorators import login_required_with_message, role_required, superuser_required
 from .models import (
@@ -41,7 +42,6 @@ from .models import (
 )
 from .utils import generate_password_reset_token, verify_password_reset_token
 from .forms import TicketForm, StaffTicketForm  # Update existing import
-from django.utils import timezone
 
 
 User = get_user_model()
@@ -182,28 +182,46 @@ def user_dashboard(request):
     
 @role_required([Role.STAFF])
 def staff_dashboard(request):
-    """Staff Dashboard View"""
+    # Get today's date range
+    today = timezone.now().date()
+    today_start = datetime.combine(today, time.min)
+    today_end = datetime.combine(today, time.max)
+
+    # Get tickets for the logged-in staff member
+    tickets = Ticket.objects.select_related(
+        'created_by',
+        'priority',
+        'assigned_to'
+    )
+
+    # Calculate statistics
     context = {
-        'assigned_tickets': Ticket.objects.select_related(
-            'created_by', 
-            'assigned_to',
-            'priority'
-        ).filter(assigned_to=request.user).order_by('-created_at'),
+        'active_tickets_count': tickets.filter(
+            assigned_to=request.user,
+            status=Ticket.STATUS_ACTIVE
+        ).count(),
         
-        'created_tickets': Ticket.objects.select_related(
-            'created_by', 
-            'assigned_to',
-            'priority'
-        ).filter(created_by=request.user).order_by('-created_at'),
+        'resolved_today': tickets.filter(
+            assigned_to=request.user,
+            status=Ticket.STATUS_CLOSED,
+            closed_at__range=(today_start, today_end)
+        ).count(),
         
-        'recent_comments': TicketComment.objects.select_related(
-            'ticket', 
-            'user'
-        ).filter(
-            Q(ticket__assigned_to=request.user) |
-            Q(ticket__created_by=request.user)
-        ).order_by('-created_at')[:5]
+        'pending_response': tickets.filter(
+            assigned_to=request.user,
+            status=Ticket.STATUS_PENDING
+        ).count(),
+        
+        'high_priority': tickets.filter(
+            assigned_to=request.user,
+            priority__name='High'
+        ).count(),
+
+        # Get tickets created by and assigned to the staff member
+        'created_tickets': tickets.filter(created_by=request.user).order_by('-created_at'),
+        'assigned_tickets': tickets.filter(assigned_to=request.user).order_by('-created_at')
     }
+
     return render(request, 'dashboards/staff_dashboard.html', context)
     
 @role_required([Role.STAFF])
@@ -1696,18 +1714,31 @@ def remove_team_member(request, team_id, user_id):
         
     return redirect('manage_team_view', team_id=team_id)
 
-@role_required([Role.ADMIN])
+@login_required
 def admin_view_ticket(request, ticket_id):
-    """Admin view for ticket details"""
-    ticket = get_object_or_404(Ticket, id=ticket_id)
-    comments = TicketComment.objects.filter(ticket=ticket).order_by('-created_at')
-    attachments = TicketAttachment.objects.filter(ticket=ticket)
+    # Get ticket with all related data
+    ticket = get_object_or_404(Ticket.objects.select_related(
+        'created_by',
+        'assigned_to',
+        'priority'
+    ).prefetch_related(
+        'comments__user',
+        'attachments'
+    ), id=ticket_id)
+
+    # Get all staff users for assignment
+    staff_users = UserDetail.objects.filter(is_staff=True)
     
+    # Get all priorities
+    priorities = Priority.objects.all()
+
     context = {
         'ticket': ticket,
-        'comments': comments,
-        'attachments': attachments,
+        'staff_users': staff_users,
+        'priorities': priorities,
+        'status_choices': Ticket.STATUS_CHOICES,
     }
+    
     return render(request, 'admin/view_ticket.html', context)
 
 @login_required
